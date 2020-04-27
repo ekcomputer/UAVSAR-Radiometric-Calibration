@@ -1,5 +1,5 @@
 CC=g++
-BIN=bin
+BIN=~/UAVSAR-rtc
 
 all: uavsar_calib uavsar_geocode
 
