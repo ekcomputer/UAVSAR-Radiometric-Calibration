@@ -19,7 +19,7 @@ import radiocal
 
 
 # Path to the UAVSAR data files:
-datapath = '/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw'
+datapath = '/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw/'
 
 # Path to the folder containing the radiometric calibration programs
 # (e.g., uavsar_calib_veg_v2 and geocode_uavsar)
