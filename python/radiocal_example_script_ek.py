@@ -42,7 +42,7 @@ pol = [0, 1, 2]
 
 
 # Root names pointing to the UAVSAR data to use for LUT creation, excluding the polarization and correction type (which get appended to this string to produce the full filename).
-sardata = ['padelE_36000_18047_000_180821_L090_CX_01']
+sardata = ['padelE_36000_18047_000_180821'] # _L090_CX_01
 
 
 # Subpaths pointing to a land cover or mask image to use for each UAVSAR scene.
