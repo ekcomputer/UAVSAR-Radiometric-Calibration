@@ -42,7 +42,7 @@ pol = [0, 1, 2]
 
 
 # Root names pointing to the UAVSAR data to use for LUT creation, excluding the polarization and correction type (which get appended to this string to produce the full filename).
-sardata = ['padelE_36000_18047_000_180821'] # _L090_CX_01
+sardata = ['padelE_36000_18047_000_180821_L090'] # _L090_CX_01
 
 
 # Subpaths pointing to a land cover or mask image to use for each UAVSAR scene.
@@ -114,7 +114,7 @@ sgfilterwindow = 51 # filter window size--larger windows yield more smoothing
 # LUT Creation
 print('CREATING LUT...')
 radiocal.createlut(datapath, sardata, maskdata, LUTpath, LUTname, allowed,
-              pol=pol, corrstr='_L090_CX_01', min_cutoff=min_cutoff,
+              pol=pol, corrstr='CX_01', min_cutoff=min_cutoff,
               max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
               sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
 
