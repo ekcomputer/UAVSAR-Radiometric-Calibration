@@ -394,7 +394,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     
         
         # Use HV image to mask out backscatter values outside the range:
-        sarimage = gdal.Open(rootpath+sardata[num]+'_HVHV'+corrstr+'.grd') # HERE I MADE A CHANGE
+        sarimage = gdal.Open(rootpath+sardata[num]+'_HVHV_'+corrstr+'.grd') # HERE I MADE A CHANGE
         sarimage = sarimage.ReadAsArray()
         sarimage[~np.isfinite(sarimage)] = -99
         mask_bool = mask_bool & (sarimage > min_cutoff) & (sarimage < max_cutoff)
