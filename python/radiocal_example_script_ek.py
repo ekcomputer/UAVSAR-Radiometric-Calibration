@@ -114,7 +114,7 @@ sgfilterwindow = 51 # filter window size--larger windows yield more smoothing
 # LUT Creation
 print('CREATING LUT...')
 radiocal.createlut(datapath, sardata, maskdata, LUTpath, LUTname, allowed,
-              pol=pol, corrstr='CX_01', min_cutoff=min_cutoff,
+              pol=pol, corrstr='', min_cutoff=min_cutoff,
               max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
               sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
 
