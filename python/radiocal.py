@@ -409,7 +409,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     
         
         for p in range(0,np.size(pol)):
-            print('Processing '+rootpath+sardata[num]+'_'+pol_str[pol[p]]+'_'+corrstr+'.grd'+' ...')
+            print('Processing '+rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd'+' ...')
             sarimage = gdal.Open(rootpath+sardata[num]+'_'+pol_str[pol[p]]+'_'+corrstr+'.grd')
             sarimage = sarimage.ReadAsArray()
             sarimage = sarimage[mask_bool]
