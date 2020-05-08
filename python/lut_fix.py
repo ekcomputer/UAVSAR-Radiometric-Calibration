@@ -3,6 +3,8 @@
 Created on Thu Nov 10 15:21:17 2016
 
 @author: mdenbina
+
+Plots LUT and mean LUT values.  Edits values to fit new low/high bounds.
 """
 import numpy as np
 import matplotlib.pyplot as plt

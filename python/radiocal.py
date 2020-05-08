@@ -368,8 +368,8 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     shortpol_str = ['HH','VV','HV']   
     
     # Empty LUT arrays:
-    LUT_val = np.zeros((900,900,np.size(pol)))
-    LUT_num = np.zeros((900,900,np.size(pol)))
+    LUT_val = np.zeros((900,900,np.size(pol))) # will hold the cumulative sum of all pixels that fall in this bin
+    LUT_num = np.zeros((900,900,np.size(pol))) # will hold count of of all pixels that fall in this bin
     
     
     for num in range(0,np.size(sardata)):
@@ -379,26 +379,28 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         # Load the mask, look, slope, etc.
         mask = gdal.Open(rootpath+maskdata[num],gdal.GA_ReadOnly)
         mask = mask.ReadAsArray()
-    
+
+        # binarize landcover classification to only include classes of interest
         mask_bool = np.zeros(mask.shape,dtype='bool')
         for val in range(0,np.size(allowed)):
             mask_bool = mask_bool | (mask == allowed[val])
         del mask
         
-        look = gdal.Open(rootpath+sardata[num]+'_look.grd',gdal.GA_ReadOnly)
-        look = look.ReadAsArray()
+        look = gdal.Open(rootpath+sardata[num]+'_look.grd',gdal.GA_ReadOnly) # HERE should change file naming scheme
+        look = np.degrees(look.ReadAsArray()) # HERE changed to degrees
     
         
         # Mask out look angles outside the range:
-        mask_bool = mask_bool & (look > min_look) & (look < max_look)
+        mask_bool = mask_bool & (look > min_look) & (look < max_look) # HERE I converted rad to deg and need to confirm look is same as inc
     
         
         # Use HV image to mask out backscatter values outside the range:
         sarimage = gdal.Open(rootpath+sardata[num]+'HVHV_'+corrstr+'.grd') # HERE I MADE A CHANGE
         sarimage = sarimage.ReadAsArray()
         # sarimage[~np.isfinite(sarimage)] = -99 # HERE edit
-        mask_bool = mask_bool & (sarimage > min_cutoff) & (sarimage < max_cutoff)
+        mask_bool = mask_bool & (sarimage > min_cutoff) & (sarimage < max_cutoff)  # positive mask
         
+        # apply same mask to look file
         look = look[mask_bool]
     
     
@@ -408,7 +410,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             slope = slope[mask_bool]
     
         
-        for p in range(0,np.size(pol)):
+        for p in range(0,np.size(pol)): # loop through HHHH, HHHHV, etc. for each scene
             print('Processing '+rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd'+' ...')
             sarimage = gdal.Open(rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd')
             sarimage = sarimage.ReadAsArray()
@@ -418,19 +420,21 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             # Populate the LUT:
             dim = np.size(sarimage)
             
-            for pix in range(0,dim):
+            for pix in range(0,dim): # TODO: don't iterate over pixels!
+                
+                # print reporting
                 if (pix % 1000000) == 0:
                     print(pix)
-                if np.isfinite(sarimage[pix]):
+                if np.isfinite(sarimage[pix]): # data is all finite, no nans...
                     look_bin = int(np.floor(look[pix]*10))
                     
                     if flatdemflag == True:
-                        slope_bin = 450
+                        slope_bin = 450 # zero degrees /flat
                     else:
                         slope_bin = int(np.floor((slope[pix] + 90)*5))
                         
-                    LUT_val[slope_bin,look_bin,p] += sarimage[pix]
-                    LUT_num[slope_bin,look_bin,p] += 1
+                    LUT_val[slope_bin,look_bin,p] += sarimage[pix] # accumulate backscatter values
+                    LUT_num[slope_bin,look_bin,p] += 1 # accumulate px count
                     
                     
     
@@ -438,17 +442,17 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     # Finalize the LUT:    
     print('Finalizing look up tables...')
     for p in range(0,np.size(pol)):
-        LUT_val_temp = LUT_val[:,:,p]
-        LUT_num_temp = LUT_num[:,:,p]
+        LUT_val_temp = LUT_val[:,:,p] # re-initiated for each polarization
+        LUT_num_temp = LUT_num[:,:,p] # divide by zero error  # <------------------- HERE replace zeros in LUT_num_temp with None or NaN
         
-        LUT = LUT_val_temp / LUT_num_temp
-        LUT[LUT_num_temp < min_samples] = 0
+        LUT = LUT_val_temp / LUT_num_temp # take average
+        LUT[LUT_num_temp < min_samples] = 0 # exclude bins w/o enough data
         LUTma = LUT
         
         if flatdemflag == True:
             # Make the LUT independent of range slope:
             LUT = LUT[450,:]
-            LUT = np.tile(LUT,(900,1))
+            LUT = np.tile(LUT,(900,1)) # MATLAB repmat
         
         startloc = 10
         endloc = 890
@@ -487,7 +491,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
                 
                 
         # Copy edges of LUT along look angle axis to rest of data, in case
-        # the data to correct has a wider look angle range.
+        # the data to correct has a wider look angle range (extrapolate values).
         look_low_bin = int(np.floor(min_look*10))       
         look_high_bin = int(np.floor(max_look*10))
         
@@ -499,5 +503,18 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         if (startloc == 10) and (endloc == 890):
             print('radiocal.createlut | WARNING: Generated LUT appears to be empty.  Does your mask contain enough pixels?  Are the values given to the min_cutoff, max_cutoff, min_look, max_look, and min_samples arguments reasonable?')
         
+        # save as binary
         LUT = LUT.astype('float32')
         LUT.tofile(LUTpath+'caltbl_'+LUTname+'_'+shortpol_str[pol[p]]+'.flt')
+        
+        # Plot
+        import matplotlib.pyplot as plt
+        plt.imshow(LUT, label='caltbl_'+LUTname+'_'+shortpol_str[pol[p]])
+        plt.colorbar()
+        plt.savefig(LUTpath+'caltbl_'+LUTname+'_'+shortpol_str[pol[p]]+'.png')
+                    
+        # Plot 2
+        plt.figure()
+        plt.plot(np.linspace(0, 90, num=LUT.shape[1]), np.nanmean(LUT,axis=0),label='caltbl_'+LUTname+'_'+shortpol_str[pol[p]]) # This doesn't quite work...
+        plt.xlabel('Incidence angle'); plt.ylabel('Slope')
+        plt.savefig(LUTpath+'calplot_'+LUTname+'_'+shortpol_str[pol[p]]+'.png')
