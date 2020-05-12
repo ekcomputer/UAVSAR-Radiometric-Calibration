@@ -445,7 +445,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         LUT_val_temp = LUT_val[:,:,p] # re-initiated for each polarization
         LUT_num_temp = LUT_num[:,:,p] # divide by zero error  # <------------------- HERE replace zeros in LUT_num_temp with None or NaN
         
-        LUT = LUT_val_temp / LUT_num_temp # take average
+        LUT = LUT_val_temp / LUT_num_temp # take average, convert to actual LUT format
         LUT[LUT_num_temp < min_samples] = 0 # exclude bins w/o enough data
         LUTma = LUT
         
