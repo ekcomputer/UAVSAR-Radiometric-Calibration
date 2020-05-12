@@ -20,6 +20,8 @@ import os
 import subprocess
 import osgeo.gdal as gdal
 import scipy.signal
+from scipy.stats import binned_statistic
+import matplotlib.pyplot as plt
 
 from buildUAVSARhdr import genHDRfromTXT
 
@@ -368,8 +370,9 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     shortpol_str = ['HH','VV','HV']   
     
     # Empty LUT arrays:
-    LUT_val = np.zeros((900,900,np.size(pol))) # will hold the cumulative sum of all pixels that fall in this bin
-    LUT_num = np.zeros((900,900,np.size(pol))) # will hold count of of all pixels that fall in this bin
+    # LUT_val = np.zeros((900,900,np.size(pol))) # will hold the cumulative sum of all pixels that fall in this bin
+    LUTs_num = np.zeros((900,900,np.size(pol))) # will hold count of of all pixels that fall in this bin
+    LUTs=np.zeros((900,900,np.size(pol))) # TODO: which class?
     
     
     for num in range(0,np.size(sardata)):
@@ -414,27 +417,68 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             print('Processing '+rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd'+' ...')
             sarimage = gdal.Open(rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd')
             sarimage = sarimage.ReadAsArray()
-            sarimage = sarimage[mask_bool]
+            sarimage = sarimage[mask_bool] # reshapes sarimage to linear vector
             
             
             # Populate the LUT:
             dim = np.size(sarimage)
             
-            for pix in range(0,dim): # TODO: don't iterate over pixels!
-                
-                # print reporting
-                if (pix % 1000000) == 0:
-                    print(pix)
-                if np.isfinite(sarimage[pix]): # data is all finite, no nans...
-                    look_bin = int(np.floor(look[pix]*10))
+            ## masked version
+            bins_look=np.linspace(0,90, 901)
+            # mask_look=np.digitize(look, bins_look)
+            bins_slope=np.linspace(-45,45, 901)
+            # if flatdemflag == False:
+            #      mask_slope=np.digitize(slope, bins_look) # TODO: test
+            # else:
+            #     mask_slope=np.ones(mask_look.shape, mask_look.dtype)*450
+            
+            ## zonal stats
+            zonal_look=binned_statistic(look, sarimage, 'mean', bins=bins_look)
+            if flatdemflag == False:
+                zonal_slope=binned_statistic(slope, sarimage, 'mean', bins=bins_slope) # TODO: test
+            else:
+                zonal_slope=binned_statistic(np.zeros(look.shape, look.dtype), sarimage, 'mean', bins=bins_slope)
+            
+            ## TODO: take look bins and iterate over each slope bin, using zonal_slope.binnumber is iterator: do zonal_stats again using only zonal_slope.binnumber==n for each iteration as a mask for sarimage.
+            
+            for col in range(LUTs[:,:,0].shape[0]): # iterate over eaach slope bin # TODO: change to LUT and rm LUT_num/count
+                if flatdemflag == False:
+                    sarimage_slope_bin_msk=sarimage; # init
+                    sarimage_slope_bin_msk = sarimage_slope_bin_msk[zonal_slope.binnumber==col] # mask by slope bin
+                    zonal_slope_look=binned_statistic(look, sarimage_slope_bin_msk, 'mean', bins=bins_look)
+                    zonal_slope_look_count=binned_statistic(look, sarimage_slope_bin_msk, 'count', bins=bins_look)
                     
-                    if flatdemflag == True:
-                        slope_bin = 450 # zero degrees /flat
-                    else:
-                        slope_bin = int(np.floor((slope[pix] + 90)*5))
+                    # put into LUT and LUT_num_temp
+                    LUTs_num[:,col, p]=zonal_slope_look_count.statistic
+                    LUT[:,col,p]=zonal_slope_look.statistic
+                else: 
+                    pass
+                
+            if flatdemflag == True: # don't need to loop over columns
+                # put into LUT and LUT_num_temp for all colums at once w/o looping
+                zonal_look_count=binned_statistic(look, sarimage, 'count', bins=bins_look)
+                LUTs_num[:,:,p]=np.tile(zonal_look_count.statistic,(900,1)) # np.transpose
+                LUTs[:,:,p]= np.tile(zonal_look.statistic,(900,1))                    
+                
+            ## remove zeros
+                
+            
+            ## remove this
+            # for pix in range(0,dim): # TODO: don't iterate over pixels!
+                
+            #     # print reporting
+            #     if (pix % 1000000) == 0:
+            #         print(pix)
+            #     if np.isfinite(sarimage[pix]): # data is all finite, no nans...
+            #         look_bin = int(np.floor(look[pix]*10))
+                    
+            #         if flatdemflag == True:
+            #             slope_bin = 450 # zero degrees /flat
+            #         else:
+            #             slope_bin = int(np.floor((slope[pix] + 90)*5))
                         
-                    LUT_val[slope_bin,look_bin,p] += sarimage[pix] # accumulate backscatter values
-                    LUT_num[slope_bin,look_bin,p] += 1 # accumulate px count
+            #         LUT_val[slope_bin,look_bin,p] += sarimage[pix] # accumulate backscatter values
+            #         LUT_num[slope_bin,look_bin,p] += 1 # accumulate px count
                     
                     
     
@@ -442,14 +486,17 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     # Finalize the LUT:    
     print('Finalizing look up tables...')
     for p in range(0,np.size(pol)):
-        LUT_val_temp = LUT_val[:,:,p] # re-initiated for each polarization
-        LUT_num_temp = LUT_num[:,:,p] # divide by zero error  # <------------------- HERE replace zeros in LUT_num_temp with None or NaN
+        # LUT_val_temp = LUT_val[:,:,p] # re-initiated for each polarization
+        LUT_num_temp = LUTs_num[:,:,p]
+        LUT_num_temp[LUT_num_temp==0]=1 # set zero counts to one to avoid divide by zero
         
-        LUT = LUT_val_temp / LUT_num_temp # take average, convert to actual LUT format
-        LUT[LUT_num_temp < min_samples] = 0 # exclude bins w/o enough data
+        # LUT = LUT_val_temp / LUT_num_temp # take average, convert to actual LUT format, hopefully no div by zero errors
+        
+        LUT=LUTs[:,:,p] # select polarization of interst
+        LUT[LUT_num_temp < min_samples] = 0 # exclude bins w/o enough data # TODO: re-apply this filtering step
         LUTma = LUT
         
-        if flatdemflag == True:
+        if flatdemflag == True: # TODO: necessary?
             # Make the LUT independent of range slope:
             LUT = LUT[450,:]
             LUT = np.tile(LUT,(900,1)) # MATLAB repmat
@@ -508,13 +555,12 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         LUT.tofile(LUTpath+'caltbl_'+LUTname+'_'+shortpol_str[pol[p]]+'.flt')
         
         # Plot
-        import matplotlib.pyplot as plt
         plt.imshow(LUT, label='caltbl_'+LUTname+'_'+shortpol_str[pol[p]])
         plt.colorbar()
         plt.savefig(LUTpath+'caltbl_'+LUTname+'_'+shortpol_str[pol[p]]+'.png')
                     
         # Plot 2
         plt.figure()
-        plt.plot(np.linspace(0, 90, num=LUT.shape[1]), np.nanmean(LUT,axis=0),label='caltbl_'+LUTname+'_'+shortpol_str[pol[p]]) # This doesn't quite work...
+        plt.plot(np.linspace(0, 90, LUT.shape[1]), np.nanmean(LUT,axis=0),label='caltbl_'+LUTname+'_'+shortpol_str[pol[p]]) # This doesn't quite work...
         plt.xlabel('Incidence angle'); plt.ylabel('Slope')
         plt.savefig(LUTpath+'calplot_'+LUTname+'_'+shortpol_str[pol[p]]+'.png')
