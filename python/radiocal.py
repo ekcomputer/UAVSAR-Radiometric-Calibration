@@ -371,8 +371,8 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     
     # Empty LUT arrays:
     # LUT_val = np.zeros((900,900,np.size(pol))) # will hold the cumulative sum of all pixels that fall in this bin
-    LUTs_num = np.zeros((900,900,np.size(pol))) # will hold count of of all pixels that fall in this bin
-    LUTs=np.zeros((900,900,np.size(pol))) # TODO: which class?
+    LUT_num = np.zeros((900,900,np.size(pol))) # will hold count of of all pixels that fall in this bin
+    LUT_val=np.zeros((900,900,np.size(pol))) # TODO: which class?
     
     
     for num in range(0,np.size(sardata)):
@@ -433,23 +433,21 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             #     mask_slope=np.ones(mask_look.shape, mask_look.dtype)*450
             
             ## zonal stats
-            zonal_look=binned_statistic(look, sarimage, 'mean', bins=bins_look)
+            zonal_look=binned_statistic(look, sarimage, 'sum', bins=bins_look)
             if flatdemflag == False:
-                zonal_slope=binned_statistic(slope, sarimage, 'mean', bins=bins_slope) # TODO: test
+                zonal_slope=binned_statistic(slope, sarimage, 'sum', bins=bins_slope) # TODO: test
             else:
-                zonal_slope=binned_statistic(np.zeros(look.shape, look.dtype), sarimage, 'mean', bins=bins_slope)
+                zonal_slope=binned_statistic(np.zeros(look.shape, look.dtype), sarimage, 'sum', bins=bins_slope)
             
-            ## TODO: take look bins and iterate over each slope bin, using zonal_slope.binnumber is iterator: do zonal_stats again using only zonal_slope.binnumber==n for each iteration as a mask for sarimage.
-            
-            for col in range(LUTs[:,:,0].shape[0]): # iterate over eaach slope bin # TODO: change to LUT and rm LUT_num/count
+            for col in range(LUT_val[:,:,0].shape[0]): # iterate over eaach slope bin #TODO: test
                 if flatdemflag == False:
                     sarimage_slope_bin_msk=sarimage; # init
                     sarimage_slope_bin_msk = sarimage_slope_bin_msk[zonal_slope.binnumber==col] # mask by slope bin
-                    zonal_slope_look=binned_statistic(look, sarimage_slope_bin_msk, 'mean', bins=bins_look)
+                    zonal_slope_look=binned_statistic(look, sarimage_slope_bin_msk, 'sum', bins=bins_look)
                     zonal_slope_look_count=binned_statistic(look, sarimage_slope_bin_msk, 'count', bins=bins_look)
                     
                     # put into LUT and LUT_num_temp
-                    LUTs_num[:,col, p]=zonal_slope_look_count.statistic
+                    LUT_num[:,col, p]=zonal_slope_look_count.statistic
                     LUT[:,col,p]=zonal_slope_look.statistic
                 else: 
                     pass
@@ -457,8 +455,8 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             if flatdemflag == True: # don't need to loop over columns
                 # put into LUT and LUT_num_temp for all colums at once w/o looping
                 zonal_look_count=binned_statistic(look, sarimage, 'count', bins=bins_look)
-                LUTs_num[:,:,p]=np.tile(zonal_look_count.statistic,(900,1)) # np.transpose
-                LUTs[:,:,p]= np.tile(zonal_look.statistic,(900,1))                    
+                LUT_num[:,:,p]=np.tile(zonal_look_count.statistic,(900,1)) # np.transpose
+                LUT_val[:,:,p]= np.tile(zonal_look.statistic,(900,1))                    
                 
             ## remove zeros
                 
@@ -486,14 +484,14 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     # Finalize the LUT:    
     print('Finalizing look up tables...')
     for p in range(0,np.size(pol)):
-        # LUT_val_temp = LUT_val[:,:,p] # re-initiated for each polarization
-        LUT_num_temp = LUTs_num[:,:,p]
+        LUT_val_temp = LUT_val[:,:,p] # re-initiated for each polarization
+        LUT_num_temp = LUT_num[:,:,p]
         LUT_num_temp[LUT_num_temp==0]=1 # set zero counts to one to avoid divide by zero
         
-        # LUT = LUT_val_temp / LUT_num_temp # take average, convert to actual LUT format, hopefully no div by zero errors
+        LUT = LUT_val_temp / LUT_num_temp # take average, convert to actual LUT format, hopefully no div by zero errors
         
-        LUT=LUTs[:,:,p] # select polarization of interst
-        LUT[LUT_num_temp < min_samples] = 0 # exclude bins w/o enough data # TODO: re-apply this filtering step
+        # LUT=LUT_val[:,:,p] # select polarization of interst
+        LUT[LUT_num_temp < min_samples] = 0 # exclude bins w/o enough data
         LUTma = LUT
         
         if flatdemflag == True: # TODO: necessary?
@@ -547,7 +545,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
 
                 
         
-        if (startloc == 10) and (endloc == 890):
+        if np.sum(LUT) < 1: #(startloc == 10) and (endloc == 890):
             print('radiocal.createlut | WARNING: Generated LUT appears to be empty.  Does your mask contain enough pixels?  Are the values given to the min_cutoff, max_cutoff, min_look, max_look, and min_samples arguments reasonable?')
         
         # save as binary
@@ -558,9 +556,10 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         plt.imshow(LUT, label='caltbl_'+LUTname+'_'+shortpol_str[pol[p]])
         plt.colorbar()
         plt.savefig(LUTpath+'caltbl_'+LUTname+'_'+shortpol_str[pol[p]]+'.png')
+        plt.xlabel('Incidence angle'); plt.ylabel('Slope')
                     
         # Plot 2
         plt.figure()
-        plt.plot(np.linspace(0, 90, LUT.shape[1]), np.nanmean(LUT,axis=0),label='caltbl_'+LUTname+'_'+shortpol_str[pol[p]]) # This doesn't quite work...
-        plt.xlabel('Incidence angle'); plt.ylabel('Slope')
+        plt.plot(np.linspace(0, 90, LUT.shape[1]), np.nanmean(LUT,axis=0),label='caltbl_'+LUTname+'_'+shortpol_str[pol[p]]) # This returns runtime error for empty rows
+        plt.xlabel('Incidence angle'); plt.ylabel('Magnitude')
         plt.savefig(LUTpath+'calplot_'+LUTname+'_'+shortpol_str[pol[p]]+'.png')

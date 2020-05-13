@@ -16,7 +16,8 @@ import numpy as np
 import radiocal
 
 
-
+# print
+print('Starting radiocal example script.')
 
 # Path to the UAVSAR data files:
 datapath = '/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw/'
@@ -34,11 +35,11 @@ geocodeprog = programpath+'uavsar_geocode'
 
 # min and max look angles, if post processing is enabled...
 # look angles outside these bounds will be set to zero:
-minlook = 24
-maxlook = 64
+minlook = 24 # 20.86 for PAD 2017
+maxlook = 64 # 65.55 for PAD 2017
 
 # Polarizations to correct:
-pol = [0, 1, 2]
+pol = [0, 1, 2] #[0] #[0, 1, 2]
 
 
 # Root names pointing to the UAVSAR data to use for LUT creation, excluding the polarization and correction type (which get appended to this string to produce the full filename).
@@ -70,12 +71,13 @@ calname='grd_lut'
 # Note: For Louisiana data using CCAP land cover, classes 15 and 18 are both
 # emergent wetland (18: Estuarine Emergent Wetland, and 15: Palustrine
 # Emergent Wetland).
-allowed = range(1, 16)
+allowed = [14] #range(1, 16)
 
 
 # These settings determine which pixels we use to generate the LUT, and which pixels are excluded, based on backscatter.
 # Note, these cutoff values should be based on HV backscatter.  To be consistent between the polarizations, we always mask out
 # the same pixels for each polarization.  The pixels excluded based on backscatter use the HVHV.
+# TODO add auto min/max look angle masking?
 max_cutoff = np.inf # pixels above this value will be excluded
 min_cutoff = 0 # pixels below this will be excluded
 
