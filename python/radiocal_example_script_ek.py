@@ -35,8 +35,9 @@ geocodeprog = programpath+'uavsar_geocode'
 
 # min and max look angles, if post processing is enabled...
 # look angles outside these bounds will be set to zero:
-minlook = 24 # 20.86 for PAD 2017
-maxlook = 64 # 65.55 for PAD 2017
+# choose values that will definitely have data- if you get close to the real min/max look, be sure to set min_samples to a high value, i.e. 10,000 to filter out tall trees/mountains etc that can cause outliers
+minlook = 22 #24 # 20.86 for PAD 2017
+maxlook = 64 #64 # 65.55 for PAD 2017
 
 # Polarizations to correct:
 pol = [0] #[0, 1, 2] #[0] #[0, 1, 2]
@@ -83,7 +84,7 @@ min_cutoff = 0 # pixels below this will be excluded
 
 
 # Set to true to assume range slope is zero, false otherwise:
-flatdemflag = True # HERE change
+flatdemflag = False # HERE change
 
 # Constant height value for the created flat DEM:
 hgtval = 180
@@ -118,7 +119,7 @@ print('CREATING LUT...')
 radiocal.createlut(datapath, sardata, maskdata, LUTpath, LUTname, allowed,
               pol=pol, corrstr='CX_01', min_cutoff=min_cutoff,
               max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
-              sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
+              sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=5000)
 
 
 
