@@ -39,7 +39,7 @@ minlook = 24 # 20.86 for PAD 2017
 maxlook = 64 # 65.55 for PAD 2017
 
 # Polarizations to correct:
-pol = [0, 1, 2] #[0] #[0, 1, 2]
+pol = [0] #[0, 1, 2] #[0] #[0, 1, 2]
 
 
 # Root names pointing to the UAVSAR data to use for LUT creation, excluding the polarization and correction type (which get appended to this string to produce the full filename).
@@ -71,7 +71,7 @@ calname='grd_lut'
 # Note: For Louisiana data using CCAP land cover, classes 15 and 18 are both
 # emergent wetland (18: Estuarine Emergent Wetland, and 15: Palustrine
 # Emergent Wetland).
-allowed = [14] #range(1, 16)
+allowed = range(1, 16) #[14] #range(1, 16) # 14 refers to barren class!
 
 
 # These settings determine which pixels we use to generate the LUT, and which pixels are excluded, based on backscatter.
