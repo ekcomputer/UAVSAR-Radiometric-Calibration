@@ -538,7 +538,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         # Copy edges of LUT along look angle axis to rest of data, in case
         # the data to correct has a wider look angle range (extrapolate values).
         look_low_bin = int(np.floor(min_look*10))       
-        look_high_bin = int(np.floor(max_look*10))
+        look_high_bin = int(np.floor(max_look*10))-1
         
         LUT[:,0:look_low_bin] = LUT[:,look_low_bin,np.newaxis]       
         LUT[:,look_high_bin+1:] = LUT[:,look_high_bin,np.newaxis]
