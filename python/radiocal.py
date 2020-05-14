@@ -508,10 +508,10 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
                 foundend = False
                 LUT[LUT == 0] = np.nan
                 for lookbin in range(10,890):
-                    if (LUT_num_temp[450,lookbin] > 0) and (foundstart == False):
+                    if (LUT_num_temp[450,lookbin] > 1) and (foundstart == False):
                         foundstart = True
                         startloc = lookbin
-                    if (LUT_num_temp[450,lookbin] == 0) and (foundstart == True) and (foundend == False):
+                    if (LUT_num_temp[450,lookbin] == 1) and (foundstart == True) and (foundend == False):
                         foundend = True
                         endloc = lookbin
                     if (foundstart == True) and (foundend == False):
