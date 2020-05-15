@@ -372,7 +372,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     # Empty LUT arrays:
     # LUT_val = np.zeros((900,900,np.size(pol))) # will hold the cumulative sum of all pixels that fall in this bin
     LUT_num = np.zeros((900,900,np.size(pol))) # will hold count of of all pixels that fall in this bin
-    LUT_val=np.zeros((900,900,np.size(pol))) # TODO: which class?
+    LUT_val=np.zeros((900,900,np.size(pol)))
     
     
     for num in range(0,np.size(sardata)):
@@ -410,7 +410,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         if flatdemflag == False:
             slope = gdal.Open(rootpath+sardata[num]+'_'+corrstr+'.slope',gdal.GA_ReadOnly)
             slope = np.degrees(slope.ReadAsArray()) # HERE changed to degrees
-            slope = slope[mask_bool] #TODO : mask by -10000 nodata value
+            slope = slope[mask_bool] #NOTE : I didn't need to mask out the -10000 nodata value bc it is out of the range I'm binning
     
         
         for p in range(0,np.size(pol)): # loop through HHHH, HHHHV, etc. for each scene
@@ -428,18 +428,18 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             # mask_look=np.digitize(look, bins_look)
             bins_slope=np.linspace(-45,45, 901)
             # if flatdemflag == False:
-            #      mask_slope=np.digitize(slope, bins_look) # TODO: test
+            #      mask_slope=np.digitize(slope, bins_look) 
             # else:
             #     mask_slope=np.ones(mask_look.shape, mask_look.dtype)*450
             
             ## zonal stats
             zonal_look=binned_statistic(look, sarimage, 'sum', bins=bins_look)
             if flatdemflag == False:
-                zonal_slope=binned_statistic(slope, sarimage, 'sum', bins=bins_slope) # TODO: test
+                zonal_slope=binned_statistic(slope, sarimage, 'sum', bins=bins_slope)
             # else:
                 # zonal_slope=binned_statistic(np.zeros(look.shape, look.dtype), sarimage, 'sum', bins=bins_slope)
             
-            for row in range(LUT_val[:,:,0].shape[0]): # iterate over eaach slope bin #TODO: test
+            for row in range(LUT_val[:,:,0].shape[0]):
                 print('Slopes {} to {}'.format(bins_slope[row], bins_slope[row+1]))
                 if flatdemflag == False:
                     if  np.sum(zonal_slope.binnumber==row)>0: #sarimage_slope_bin_msk.shape[0]!=0: #if there are values present with this particular slope
@@ -448,8 +448,8 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
                         look_slope_bin_msk=look;
                         sarimage_slope_bin_msk = sarimage_slope_bin_msk[zonal_slope.binnumber==row] # mask sarimage by slope bin
                         look_slope_bin_msk=look[zonal_slope.binnumber==row];
-                        zonal_slopemask_look=binned_statistic(look_slope_bin_msk, sarimage_slope_bin_msk, 'sum', bins=bins_look) # <----------------- HERE fixed error?
-                        zonal_slopemask_look_count=binned_statistic(look, sarimage_slope_bin_msk, 'count', bins=bins_look)
+                        zonal_slopemask_look=binned_statistic(look_slope_bin_msk, sarimage_slope_bin_msk, 'sum', bins=bins_look)
+                        zonal_slopemask_look_count=binned_statistic(look_slope_bin_msk, sarimage_slope_bin_msk, 'count', bins=bins_look)
                         
                         # put into LUT and LUT_num_temp
                         LUT_num[row,:, p]=zonal_slopemask_look_count.statistic # HERE switch dims
@@ -496,7 +496,11 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         LUT = LUT_val_temp / LUT_num_temp # take average, convert to actual LUT format, hopefully no div by zero errors
         
         # LUT=LUT_val[:,:,p] # select polarization of interst
-        LUT[LUT_num_temp < min_samples] = 0 # exclude bins w/o enough data
+        
+        if flatdemflag==False:
+            LUT[LUT_num_temp < min_samples] = 0 # exclude bins w/o enough data
+        else:
+            LUT[LUT_num_temp < min_samples*LUT.shape[0]] = 0 # use a larger number, because all counts will be lumped into each slope bin (repeated 900 times)
         LUTma = LUT
         
         if flatdemflag == True: # TODO: necessary?

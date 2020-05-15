@@ -119,7 +119,7 @@ print('CREATING LUT...')
 radiocal.createlut(datapath, sardata, maskdata, LUTpath, LUTname, allowed,
               pol=pol, corrstr='CX_01', min_cutoff=min_cutoff,
               max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
-              sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=50)
+              sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
 
 
 
