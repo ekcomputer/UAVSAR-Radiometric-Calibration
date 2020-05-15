@@ -289,7 +289,7 @@ def sgolay2d (z, window_size, order, derivative=None):
     if derivative == None:
         m = np.linalg.pinv(A)[0].reshape((window_size, -1))
         return scipy.signal.fftconvolve(Z, m, mode='valid')
-    elif derivative == 'col':
+    elif derivative == 'row':
         c = np.linalg.pinv(A)[1].reshape((window_size, -1))
         return scipy.signal.fftconvolve(Z, -c, mode='valid')
     elif derivative == 'row':
@@ -408,9 +408,9 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     
     
         if flatdemflag == False:
-            slope = gdal.Open(rootpath+sardata[num]+'_slope.grd',gdal.GA_ReadOnly)
-            slope = slope.ReadAsArray()
-            slope = slope[mask_bool]
+            slope = gdal.Open(rootpath+sardata[num]+'_'+corrstr+'.slope',gdal.GA_ReadOnly)
+            slope = np.degrees(slope.ReadAsArray()) # HERE changed to degrees
+            slope = slope[mask_bool] #TODO : mask by -10000 nodata value
     
         
         for p in range(0,np.size(pol)): # loop through HHHH, HHHHV, etc. for each scene
@@ -436,19 +436,24 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             zonal_look=binned_statistic(look, sarimage, 'sum', bins=bins_look)
             if flatdemflag == False:
                 zonal_slope=binned_statistic(slope, sarimage, 'sum', bins=bins_slope) # TODO: test
-            else:
-                zonal_slope=binned_statistic(np.zeros(look.shape, look.dtype), sarimage, 'sum', bins=bins_slope)
+            # else:
+                # zonal_slope=binned_statistic(np.zeros(look.shape, look.dtype), sarimage, 'sum', bins=bins_slope)
             
-            for col in range(LUT_val[:,:,0].shape[0]): # iterate over eaach slope bin #TODO: test
+            for row in range(LUT_val[:,:,0].shape[0]): # iterate over eaach slope bin #TODO: test
+                print('Slopes {} to {}'.format(bins_slope[row], bins_slope[row+1]))
                 if flatdemflag == False:
-                    sarimage_slope_bin_msk=sarimage; # init
-                    sarimage_slope_bin_msk = sarimage_slope_bin_msk[zonal_slope.binnumber==col] # mask by slope bin
-                    zonal_slope_look=binned_statistic(look, sarimage_slope_bin_msk, 'sum', bins=bins_look)
-                    zonal_slope_look_count=binned_statistic(look, sarimage_slope_bin_msk, 'count', bins=bins_look)
-                    
-                    # put into LUT and LUT_num_temp
-                    LUT_num[:,col, p]=zonal_slope_look_count.statistic
-                    LUT[:,col,p]=zonal_slope_look.statistic
+                    if  np.sum(zonal_slope.binnumber==row)>0: #sarimage_slope_bin_msk.shape[0]!=0: #if there are values present with this particular slope
+                    # zonal stats on masked array
+                        sarimage_slope_bin_msk=sarimage # init
+                        look_slope_bin_msk=look;
+                        sarimage_slope_bin_msk = sarimage_slope_bin_msk[zonal_slope.binnumber==row] # mask sarimage by slope bin
+                        look_slope_bin_msk=look[zonal_slope.binnumber==row];
+                        zonal_slopemask_look=binned_statistic(look_slope_bin_msk, sarimage_slope_bin_msk, 'sum', bins=bins_look) # <----------------- HERE fixed error?
+                        zonal_slopemask_look_count=binned_statistic(look, sarimage_slope_bin_msk, 'count', bins=bins_look)
+                        
+                        # put into LUT and LUT_num_temp
+                        LUT_num[row,:, p]=zonal_slopemask_look_count.statistic # HERE switch dims
+                        LUT_val[row,:,p]=zonal_slopemask_look.statistic
                 else: 
                     pass
                 
