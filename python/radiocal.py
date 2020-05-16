@@ -444,35 +444,46 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
                 # zonal_slope=binned_statistic(slope, sarimage, 'sum', bins=bins_slope)
             # else:
                 # zonal_slope=binned_statistic(np.zeros(look.shape, look.dtype), sarimage, 'sum', bins=bins_slope)
+            c=0 # init counter
             
-            for row in range(LUT_val[:,:,0].shape[0]):
-                print('Slopes {} to {}'.format(bins_slope[row], bins_slope[row+1]))
-                if flatdemflag == False:
-                    # if  np.sum(zonal_slope.binnumber==row)>0: #sarimage_slope_bin_msk.shape[0]!=0: #if there are values present with this particular slope
-                    # zonal stats on masked array
-                    for col in range(LUT_val[:,:,0].shape[1]): # iterate over look/col
-                        print('\tLook {} to {}'.format(bins_look[col], bins_look[col+1]))
-                        # sarimage_slope_bin_msk=sarimage # init
-                        # look_slope_bin_msk=look;
-                        # sarimage_slope_bin_msk = sarimage_slope_bin_msk[zonal_slope.binnumber==row] # mask sarimage by slope bin
-                        # look_slope_bin_msk=look[zonal_slope.binnumber==row];
-                        # zonal_slopemask_look=binned_statistic(look_slope_bin_msk, sarimage_slope_bin_msk, 'sum', bins=bins_look)
-                        # zonal_slopemask_look_count=binned_statistic(look_slope_bin_msk, sarimage_slope_bin_msk, 'count', bins=bins_look)
+            ## make unique ID
+            mask_lookslope=mask_look+(900*mask_slope) # should have 810,000 or 810,001unique entires!
+            zonal_lookslope=binned_statistic(mask_lookslope, sarimage, 'sum', bins=np.linspace(0, 810000,810001))
+            zonal_lookslope_count=binned_statistic(mask_lookslope, sarimage, 'count', bins=np.linspace(0, 810000,810001))
+            # for row in range(LUT_val[:,:,0].shape[0]):
+                # print('Slopes {} to {}'.format(bins_slope[row], bins_slope[row+1]))
+                # if flatdemflag == False:
+                #     # if  np.sum(zonal_slope.binnumber==row)>0: #sarimage_slope_bin_msk.shape[0]!=0: #if there are values present with this particular slope
+                #     # zonal stats on masked array
+                #     for col in range(LUT_val[:,:,0].shape[1]): # iterate over look/col
+                #         print('\tLook {} to {}'.format(bins_look[col], bins_look[col+1]))
+                #         # sarimage_slope_bin_msk=sarimage # init
+                #         # look_slope_bin_msk=look;
+                #         # sarimage_slope_bin_msk = sarimage_slope_bin_msk[zonal_slope.binnumber==row] # mask sarimage by slope bin
+                #         # look_slope_bin_msk=look[zonal_slope.binnumber==row];
+                #         # zonal_slopemask_look=binned_statistic(look_slope_bin_msk, sarimage_slope_bin_msk, 'sum', bins=bins_look)
+                #         # zonal_slopemask_look_count=binned_statistic(look_slope_bin_msk, sarimage_slope_bin_msk, 'count', bins=bins_look)
                         
-                        # put into LUT and LUT_num_temp
-                        LUT_val[row,col, p]=np.sum(sarimage[(mask_slope==row) & (mask_look==col)]) #zonal_slopemask_look_count.statistic # HERE switch dims
-                        LUT_num[row,col, p]=np.sum((mask_slope==row) & (mask_look==col))
-                else: 
-                    pass
+                #         ## make unique ID
+                        
+                #         # mask_lookslope[c]
+                #         # c+=1
+                        
+                #         # put into LUT and LUT_num_temp
+                #         LUT_val[row,col, p]=np.sum(sarimage[(mask_slope==row) & (mask_look==col)]) #zonal_slopemask_look_count.statistic # HERE switch dims
+                #         LUT_num[row,col, p]=np.sum((mask_slope==row) & (mask_look==col))
+                # else: 
+                #     pass
                 
             if flatdemflag == True: # don't need to loop over columns
                 # put into LUT and LUT_num_temp for all colums at once w/o looping
                 zonal_look_count=binned_statistic(look, sarimage, 'count', bins=bins_look)
                 LUT_num[:,:,p]=np.tile(zonal_look_count.statistic,(900,1)) # np.transpose
-                LUT_val[:,:,p]= np.tile(zonal_look.statistic,(900,1))                    
-                
-            ## remove zeros
-                
+                LUT_val[:,:,p]= np.tile(zonal_look.statistic,(900,1))
+            else:
+                LUT_val[:,:,p]=np.reshape(zonal_lookslope.statistic, (900,900))  # by default, reshape uses C order, with last element changing fastest
+                LUT_num[:,:,p]=np.reshape(zonal_lookslope_count.statistic, (900,900))   
+                ## remove zeros                    
             
             ## remove this
             # for pix in range(0,dim): # TODO: don't iterate over pixels!
