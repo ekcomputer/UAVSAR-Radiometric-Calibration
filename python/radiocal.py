@@ -425,23 +425,23 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             
             ## masked version
             bins_look=np.linspace(0,90, 901)
-            # mask_look=np.digitize(look, bins_look)
+            mask_look=np.digitize(look, bins_look)
             bins_slope=np.linspace(-45,45, 901)
-            # if flatdemflag == False:
-            #      mask_slope=np.digitize(slope, bins_look) 
-            # else:
-            #     mask_slope=np.ones(mask_look.shape, mask_look.dtype)*450
+            if flatdemflag == False:
+                 mask_slope=np.digitize(slope, bins_slope) 
+            else:
+                mask_slope=np.ones(mask_look.shape, mask_look.dtype)*450
             
             ## zonal stats
-            zonal_look=binned_statistic(look, sarimage, 'sum', bins=bins_look)
+            # zonal_look=binned_statistic(look, sarimage, 'sum', bins=bins_look)
             
             ## vectorize second dim
-            zonal_slope=binned_statistic(slope, sarimage, 'sum', bins=bins_slope)
+            # zonal_slope=binned_statistic(slope, sarimage, 'sum', bins=bins_slope)
             
             ## end
             
-            if flatdemflag == False:
-                zonal_slope=binned_statistic(slope, sarimage, 'sum', bins=bins_slope)
+            # if flatdemflag == False:
+                # zonal_slope=binned_statistic(slope, sarimage, 'sum', bins=bins_slope)
             # else:
                 # zonal_slope=binned_statistic(np.zeros(look.shape, look.dtype), sarimage, 'sum', bins=bins_slope)
             
@@ -460,8 +460,8 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
                         # zonal_slopemask_look_count=binned_statistic(look_slope_bin_msk, sarimage_slope_bin_msk, 'count', bins=bins_look)
                         
                         # put into LUT and LUT_num_temp
-                        LUT_val[row,col, p]=np.sum(sarimage[(slope > bins_slope[col]) & (slope <= bins_slope[col+1]) & (look>bins_look[col]) & (look <= bins_look[col+1])]) #zonal_slopemask_look_count.statistic # HERE switch dims
-                        LUT_num[row,col, p]=np.sum((slope > bins_slope[col]) & (slope <= bins_slope[col+1]) & (look>bins_look[col]) & (look <= bins_look[col+1]))
+                        LUT_val[row,col, p]=np.sum(sarimage[(mask_slope==row) & (mask_look==col)]) #zonal_slopemask_look_count.statistic # HERE switch dims
+                        LUT_num[row,col, p]=np.sum((mask_slope==row) & (mask_look==col))
                 else: 
                     pass
                 
