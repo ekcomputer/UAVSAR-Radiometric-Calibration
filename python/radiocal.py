@@ -427,9 +427,9 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             bins_look=np.linspace(0,90, 901)
             bins_slope=np.linspace(-45,45, 901)
             if flatdemflag == False:
-                
+                mask_look=np.digitize(look, bins_look)
                 mask_slope=np.digitize(slope, bins_slope) 
-                mask_lookslope=mask_slope+(900*mask_look) # should have 810,000 or 810,001unique entires!
+                mask_lookslope=mask_look+(900*mask_slope) # should have 810,000 or 810,001unique entires!
                 zonal_lookslope=binned_statistic(mask_lookslope, sarimage, 'sum', bins=np.linspace(0, 810000,810001))
                 zonal_lookslope_count=binned_statistic(mask_lookslope, sarimage, 'count', bins=np.linspace(0, 810000,810001))
                 LUT_val[:,:,p]=np.reshape(zonal_lookslope.statistic, (900,900))  # by default, reshape uses C order, with last element changing fastest
@@ -457,7 +457,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         if flatdemflag==False:
             LUT[LUT_num_temp < min_samples] = 0 # exclude bins w/o enough data
         else:
-            LUT[LUT_num_temp < min_samples*LUT.shape[0]] = 0 # use a larger number, because all counts will be lumped into each slope bin (repeated 900 times)
+            LUT[LUT_num_temp < min_samples*LUT.shape[0]/5] = 0 # use a larger number, because all counts will be lumped into each slope bin (repeated 900 times)
         LUTma = LUT
         
         if flatdemflag == True: # TODO: necessary?
@@ -493,11 +493,11 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
                 LUTsm[450,endloc-int(np.ceil(sgfilterwindow/2)):endloc+1] = LUTma[450,endloc-int(np.ceil(sgfilterwindow/2)):endloc+1]
                 
                 
-                LUTsm[LUT_num_temp < min_samples] = 0
+                LUTsm[LUT_num_temp < min_samples*LUT.shape[0]/5] = 0
                 LUT = LUTsm[450,:]
                 LUT = np.tile(LUT,(900,1))
             else:
-                LUTsm = sgolay2d(LUT,sgfilterwindow,3,derivative=None)
+                LUTsm = sgolay2d(LUT,sgfilterwindow,3,derivative=None) # TODO: check that my result is same as original (i.e. SG filter in 2D behaves diff than 1D).  also try setting 0 -> NaN bf filter.
                 LUTsm[LUT_num_temp < min_samples] = 0
                 
                 
@@ -528,4 +528,4 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         plt.figure()
         plt.plot(np.linspace(0, 90, LUT.shape[1]), np.nanmean(LUT,axis=0),label='caltbl_'+LUTname+'_'+shortpol_str[pol[p]]) # This returns runtime error for empty rows
         plt.xlabel('Incidence angle'); plt.ylabel('Magnitude')
-        plt.savefig(LUTpath+'calplot_'+LUTname+'_'+shortpol_str[pol[p]]+'.png')
+        plt.savefig(LUTpath+'calplot_'+LUTname+'_'+shortpol_str[pol[p]]+'.png') # run before: LUT[LUT==0]=np.nan
