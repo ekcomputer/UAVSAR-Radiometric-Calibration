@@ -13,7 +13,7 @@ import os.path
 import argparse
     
 
-def genHDRfromTXT(annFile, dataFile, pol):
+def genHDRfromTXT(annFile, dataFile):
     format = 'GRD'
 
     # Set up dictionary to hold header parameters
@@ -21,7 +21,18 @@ def genHDRfromTXT(annFile, dataFile, pol):
 
     file = annFile
     fileBaseName = os.path.split(file)[-1]
-    fileBaseName = fileBaseName.replace('.txt','')
+    fileBaseName = fileBaseName.replace('.txt','').replace('.ann','')
+    
+    # parse data file basename to get polarization string
+    dataFileBaseName = os.path.split(dataFile)[-1]
+    dataFileBaseName = dataFileBaseName.replace('.grd','').replace('.slc','')
+    pol = dataFileBaseName[-10:-6] # this might need to be modified
+    for letter in pol:
+        if letter=='H' or letter=='V':
+            pass
+        else:
+            raise ValueError('Somehow polarization parsing didn\'t work.')
+    
     headerPar['fileBaseName']=fileBaseName
     hdrFile = open(file, 'r')
     for line in hdrFile:
@@ -103,7 +114,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=str, help="Specify the input UAVSAR ann file")
     parser.add_argument("-r", "--uavsar", type=str, help="Specify the input UAVSAR radar file")
-    parser.add_argument("-p", "--polarization", type=str, help="Specify the input UAVSAR polarization in UPPERCASE (i.e HHHV)")
     args = parser.parse_args()
 
     if '.txt' in str(args.input) or '.ann' in str(args.input):
@@ -117,12 +127,9 @@ def main():
     elif args.uavsar == None:
         print("SPECIFY INPUT UAVSAR FILE")
         os._exit(1)
-    elif args.polarization == None:
-        print("SPECIFY UAVSAR IMAGE POLARIZATION (i.e. 'HHHV')")
-        os._exit(1)
 
 
-    genHDRfromTXT(args.input, args.uavsar, args.polarization)
+    genHDRfromTXT(args.input, args.uavsar)
 
 
 if __name__ == "__main__":
