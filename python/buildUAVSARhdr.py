@@ -58,9 +58,13 @@ def genHDRfromTXT(annFile, dataFile):
                 print('Lines =', GRDLines)
                 headerPar['GRDLines'] = GRDLines
             elif 'grd_pwr.row_mult' in line:
-                GRDPixel = abs(float(line.split()[3].split(';')[0]))
-                print('PIXEL SIZE = ', GRDPixel)
-                headerPar['GRDPixel'] = GRDPixel
+                GRDPixelY = abs(float(line.split()[3].split(';')[0]))  # latitude pixel spacing
+                print('PIXEL SIZE (y) = ', GRDPixelY)
+                headerPar['GRDPixelY'] = GRDPixelY
+            elif 'grd_pwr.col_mult' in line:
+                GRDPixelX = abs(float(line.split()[3].split(';')[0]))  # longitude pixel spacing
+                print('PIXEL SIZE (x) = ', GRDPixelX)
+                headerPar['GRDPixelX'] = GRDPixelX
     
     # ASSIGN NUMER OF LINES AND SAMPLES BASED UPON FILE TYPE
     #print('Reading lines...')
@@ -96,7 +100,7 @@ data type = {dataType}
 interleave = bsq
 sensor type = Unknown
 byte order = 0
-map info = {{Geographic Lat/Lon, 1.5, 1.5, {ULlongCord}, {ULlatCord}, {GRDPixel}, {GRDPixel}, WGS-84, units=Degrees}}
+map info = {{Geographic Lat/Lon, 1.5, 1.5, {ULlongCord}, {ULlatCord}, {GRDPixelX}, {GRDPixelY}, WGS-84, units=Degrees}}
 coordinate system string = {{GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]]}}
 wavelength units = Unknown
 band names = {{{fileBaseName}}}
