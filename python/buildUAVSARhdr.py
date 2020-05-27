@@ -40,7 +40,8 @@ def genHDRfromTXT(annFile, dataFile, pol=None): # pol is dummy variable to be co
             if letter=='H' or letter=='V':
                 pass
             else:
-                raise ValueError('Somehow polarization parsing didn\'t work.  Check naming format.')
+                print('Somehow polarization parsing didn\'t work.  Check naming format.  Defaulting to HHHH') # raise ValueError
+                pol='HHHH'
     print('POLARIZATION =', pol)
     
     headerPar['fileBaseName']=fileBaseName
