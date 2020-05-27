@@ -13,7 +13,7 @@ import os.path
 import argparse
     
 
-def genHDRfromTXT(annFile, dataFile):
+def genHDRfromTXT(annFile, dataFile, pol=None): # pol is dummy variable to be compatible with previous versions and run calls
     format = 'GRD'
 
     # Set up dictionary to hold header parameters
@@ -118,6 +118,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=str, help="Specify the input UAVSAR ann file")
     parser.add_argument("-r", "--uavsar", type=str, help="Specify the input UAVSAR radar file")
+    parser.add_argument("-p", "--polarization", type=str, help="Specify the input UAVSAR polarization in UPPERCASE (i.e HHHV)- this is actually a dummy variable- polarization should be automatically parsed")
+
     args = parser.parse_args()
 
     if '.txt' in str(args.input) or '.ann' in str(args.input):
