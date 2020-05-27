@@ -302,7 +302,7 @@ def sgolay2d (z, window_size, order, derivative=None):
 
 
 
-def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
+def createlut(rootpath, sardata, maskdata, LUTpath, LUTnames, allowed,
               pol=[0,1,2], corrstr='area_only', min_cutoff=0,
               max_cutoff=np.inf, flatdemflag=False, sgfilterflag=True, 
               sgfilterwindow=51, min_look=22, max_look=65, min_samples=1):
@@ -376,6 +376,8 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     
     
     for num in range(0,np.size(sardata)):
+        rootname = sardata[num][0:-5]
+        LUTname=LUTnames[num] # allows LUT name to be assigned based on batch prefix
         driver = gdal.GetDriverByName('ENVI')
         driver.Register()
         
@@ -384,13 +386,16 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         mask = mask.ReadAsArray()
 
         # binarize landcover classification to only include classes of interest
-        mask_bool = np.zeros(mask.shape,dtype='bool')
-        for val in range(0,np.size(allowed)):
-            mask_bool = mask_bool | (mask == allowed[val])
-        del mask
-        
-        look = gdal.Open(rootpath+sardata[num]+'_look.grd',gdal.GA_ReadOnly) # HERE should change file naming scheme
-        look = np.degrees(look.ReadAsArray()) # HERE changed to degrees
+        if 1==0: # HERE quick fix to use all of mask
+            mask_bool = np.zeros(mask.shape,dtype='bool')
+            for val in range(0,np.size(allowed)):
+                mask_bool = mask_bool | (mask == allowed[val])
+            del mask
+        else:
+            mask_bool = np.ones (mask.shape,dtype='bool')
+        look = gdal.Open(rootpath+rootname+'_look.grd',gdal.GA_ReadOnly) # HERE should change file naming scheme
+        look = look.ReadAsArray()
+        # look = np.degrees(look.ReadAsArray()) # HERE changed to degrees
     
         
         # Mask out look angles outside the range:
@@ -398,7 +403,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     
         
         # Use HV image to mask out backscatter values outside the range:
-        sarimage = gdal.Open(rootpath+sardata[num]+'HVHV_'+corrstr+'.grd') # HERE I MADE A CHANGE
+        sarimage = gdal.Open(rootpath+rootname+'_'+'HVHV_'+corrstr+'.grd') # HERE I MADE A CHANGE
         sarimage = sarimage.ReadAsArray()
         # sarimage[~np.isfinite(sarimage)] = -99 # HERE edit
         mask_bool = mask_bool & (sarimage > min_cutoff) & (sarimage < max_cutoff)  # positive mask
@@ -408,14 +413,18 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     
     
         if flatdemflag == False:
-            slope = gdal.Open(rootpath+sardata[num]+'_'+corrstr+'.slope',gdal.GA_ReadOnly)
-            slope = np.degrees(slope.ReadAsArray()) # HERE changed to degrees
+            # slope = gdal.Open(rootpath+sardata[num]+'_'+corrstr+'.slope',gdal.GA_ReadOnly) # if using default slope file
+            slope = gdal.Open(rootpath+rootname+'_slope.grd',gdal.GA_ReadOnly) # if using created slope file
+            slope = slope.ReadAsArray()
+            # slope = np.degrees(slope.ReadAsArray()) # HERE changed to degrees
             slope = slope[mask_bool] #NOTE : I didn't need to mask out the -10000 nodata value bc it is out of the range I'm binning
     
         
         for p in range(0,np.size(pol)): # loop through HHHH, HHHHV, etc. for each scene
-            print('Processing '+rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd'+' ...')
-            sarimage = gdal.Open(rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd')
+            # sarimage_pth=rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd' # manual
+            sarimage_pth=rootpath+rootname+'_'+pol_str[pol[p]]+'_'+corrstr+'.grd' # auto naming           
+            print('Processing '+sarimage_pth+' ...')
+            sarimage = gdal.Open(sarimage_pth)
             sarimage = sarimage.ReadAsArray()
             sarimage = sarimage[mask_bool] # reshapes sarimage to linear vector
             

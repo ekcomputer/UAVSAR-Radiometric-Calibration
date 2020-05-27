@@ -20,7 +20,7 @@ import radiocal
 print('Starting radiocal example script.')
 
 # Path to the UAVSAR data files:
-datapath = '/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw/'
+datapath = '/att/nobackup/ekyzivat/tmp/rtc/bakerc_16008_19060_037_190905_L090_CX_01/raw/' # '/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw/'
 
 # Path to the folder containing the radiometric calibration programs
 # (e.g., uavsar_calib_veg_v2 and geocode_uavsar)
@@ -44,19 +44,24 @@ pol = [0] #[0, 1, 2] #[0] #[0, 1, 2]
 
 
 # Root names pointing to the UAVSAR data to use for LUT creation, excluding the polarization and correction type (which get appended to this string to produce the full filename).
-sardata = ['padelE_36000_18047_000_180821_L090'] # _L090_CX_01
+sardata = ['bakerc_16008_19060_037_190905_L090'] # original: bakerc_16008_19060_037_190905_L090HHVV_CX_01.mlc #['padelE_36000_18047_000_180821_L090'] # _L090_CX_01
 
 
 # Subpaths pointing to a land cover or mask image to use for each UAVSAR scene.
 # len() of maskdata needs to be the same as the len() of sardata.
-maskdata = ['ABoVE_LandCover_PAD_2018.tif']
+
+def maskNameFunction(str):
+    maskName=str+'_landcovermask.tif'
+    return maskName
+maskdata= [maskNameFunction(item) for item in sardata] # list(map(maskNameFunction, sardata))
+# maskdata = ['ABoVE_LandCover_PAD_2018.tif']
 
 
 # Path to save the LUT:
 LUTpath = '/att/nobackup/ekyzivat/tmp/rtc/lut/'
 
 # A name to describe the LUT:
-LUTname = 'PAD2018'
+LUTname = sardata #'PAD2018'
 
 # A name to append to the filenames of the LUT corrected output:
 calname='grd_lut'
