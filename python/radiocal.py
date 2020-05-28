@@ -382,30 +382,40 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTnames, allowed,
         driver.Register()
         
         # Load the mask, look, slope, etc.
-        mask = gdal.Open(rootpath+maskdata[num],gdal.GA_ReadOnly)
+        mask_pth = rootpath+maskdata[num]
+        if not os.path.isfile(mask_pth):
+            raise IOError('File: {} not found.'.format(mask_pth))
+        mask = gdal.Open(mask_pth,gdal.GA_ReadOnly)
         mask = mask.ReadAsArray()
 
         # binarize landcover classification to only include classes of interest
-        if 1==0: # HERE quick fix to use all of mask
+        if 1==0: # quick fix to use all of mask without loading external file
             mask_bool = np.zeros(mask.shape,dtype='bool')
             for val in range(0,np.size(allowed)):
                 mask_bool = mask_bool | (mask == allowed[val])
             del mask
         else:
             mask_bool = np.ones (mask.shape,dtype='bool')
-        look = gdal.Open(rootpath+rootname+'_look.grd',gdal.GA_ReadOnly) # HERE should change file naming scheme
+            
+        look_pth = rootpath+rootname+'_look.grd'
+        if not os.path.isfile(look_pth):
+            raise IOError('File: {} not found.'.format(look_pth))
+        look = gdal.Open(look_pth,gdal.GA_ReadOnly)
         look = look.ReadAsArray()
-        # look = np.degrees(look.ReadAsArray()) # HERE changed to degrees
+        # look = np.degrees(look.ReadAsArray()) # changed to degrees
     
         
         # Mask out look angles outside the range:
-        mask_bool = mask_bool & (look > min_look) & (look < max_look) # HERE I converted rad to deg and need to confirm look is same as inc
+        mask_bool = mask_bool & (look > min_look) & (look < max_look)
     
         
         # Use HV image to mask out backscatter values outside the range:
-        sarimage = gdal.Open(rootpath+rootname+'_'+'HVHV_'+corrstr+'.grd') # HERE I MADE A CHANGE
+        sarimage_pth=rootpath+rootname+'_'+'HVHV_'+corrstr+'.grd'
+        if not os.path.isfile(sarimage_pth):
+            raise IOError('File: {} not found.'.format(sarimage_pth))
+        sarimage = gdal.Open(sarimage_pth)
         sarimage = sarimage.ReadAsArray()
-        # sarimage[~np.isfinite(sarimage)] = -99 # HERE edit
+        sarimage[~np.isfinite(sarimage)] = -99
         mask_bool = mask_bool & (sarimage > min_cutoff) & (sarimage < max_cutoff)  # positive mask
         
         # apply same mask to look file
@@ -414,15 +424,20 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTnames, allowed,
     
         if flatdemflag == False:
             # slope = gdal.Open(rootpath+sardata[num]+'_'+corrstr+'.slope',gdal.GA_ReadOnly) # if using default slope file
-            slope = gdal.Open(rootpath+rootname+'_slope.grd',gdal.GA_ReadOnly) # if using created slope file
+            slope_pth = rootpath+rootname+'_slope.grd'
+            if not os.path.isfile(slope_pth):
+                raise IOError('File: {} not found.'.format(slope_pth))
+            slope = gdal.Open(slope_pth, gdal.GA_ReadOnly) # if using created slope file
             slope = slope.ReadAsArray()
-            # slope = np.degrees(slope.ReadAsArray()) # HERE changed to degrees
+            # slope = np.degrees(slope.ReadAsArray()) # changed to degrees
             slope = slope[mask_bool] #NOTE : I didn't need to mask out the -10000 nodata value bc it is out of the range I'm binning
     
         
         for p in range(0,np.size(pol)): # loop through HHHH, HHHHV, etc. for each scene
             # sarimage_pth=rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd' # manual
-            sarimage_pth=rootpath+rootname+'_'+pol_str[pol[p]]+'_'+corrstr+'.grd' # auto naming           
+            sarimage_pth=rootpath+rootname+'_'+pol_str[pol[p]]+'_'+corrstr+'.grd' # auto naming    
+            if not os.path.isfile(sarimage_pth):
+                raise IOError('File: {} not found.'.format(sarimage_pth))       
             print('Processing '+sarimage_pth+' ...')
             sarimage = gdal.Open(sarimage_pth)
             sarimage = sarimage.ReadAsArray()

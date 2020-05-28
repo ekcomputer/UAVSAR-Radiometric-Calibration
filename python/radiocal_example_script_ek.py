@@ -12,6 +12,7 @@ Created on Tue May 26 11:32:00 2015
 @author: mdenbina
 """
 import numpy as np
+import os
 
 import radiocal
 
@@ -19,8 +20,23 @@ import radiocal
 # print
 print('Starting radiocal example script.')
 
+# sardata_base
+sardatabase = ['bakerc_16008_18048_011_180822_L090_CX_02'] #['bakerc_16008_19060_037_190905_L090'] # original: bakerc_16008_19060_037_190905_L090HHVV_CX_01.mlc #['padelE_36000_18047_000_180821_L090'] # _L090_CX_01
+
+# Root names pointing to the UAVSAR data to use for LUT creation, excluding the polarization and correction type (which get appended to this string to produce the full filename).
+def sarDataPathNameFunction(sardata_str):
+    sardatapath=sardata_str[0:-6]
+    return sardatapath
+sardata = [sarDataPathNameFunction(sardata_str) for sardata_str in sardatabase] 
+
+# Parent path to UAVSAR data files:
+data_base_pth = '/att/nobackup/ekyzivat/tmp/rtc'
+
 # Path to the UAVSAR data files:
-datapath = '/att/nobackup/ekyzivat/tmp/rtc/bakerc_16008_19060_037_190905_L090_CX_01/raw/' # '/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw/'
+def dataPathNameFunction(data_base_pth, sardata_str):
+    datapath=os.path.join(data_base_pth, sardata_str, 'raw'+'/')
+    return datapath
+datapath = [dataPathNameFunction(data_base_pth, sardata_str) for sardata_str in sardatabase] # list(map(dataPathNameFunction, data_base_pth, sardata)) # '/att/nobackup/ekyzivat/tmp/rtc/bakerc_16008_18048_011_180822_L090_CX_02/raw/' # '/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw/'
 
 # Path to the folder containing the radiometric calibration programs
 # (e.g., uavsar_calib_veg_v2 and geocode_uavsar)
@@ -36,15 +52,11 @@ geocodeprog = programpath+'uavsar_geocode'
 # min and max look angles, if post processing is enabled...
 # look angles outside these bounds will be set to zero:
 # choose values that will definitely have data- if you get close to the real min/max look, be sure to set min_samples to a high value, i.e. 10,000 to filter out tall trees/mountains etc that can cause outliers
-minlook = 22 #24 # 20.86 for PAD 2017
-maxlook = 64 #64 # 65.55 for PAD 2017
+minlook = 25 #24 # 20.86 for PAD 2017
+maxlook = 63 #64 # 65.55 for PAD 2017
 
 # Polarizations to correct:
-pol = [0] #[0, 1, 2] #[0] #[0, 1, 2]
-
-
-# Root names pointing to the UAVSAR data to use for LUT creation, excluding the polarization and correction type (which get appended to this string to produce the full filename).
-sardata = ['bakerc_16008_19060_037_190905_L090'] # original: bakerc_16008_19060_037_190905_L090HHVV_CX_01.mlc #['padelE_36000_18047_000_180821_L090'] # _L090_CX_01
+pol = [1] #[0, 1, 2] #[0] #[0, 1, 2]
 
 
 # Subpaths pointing to a land cover or mask image to use for each UAVSAR scene.
@@ -53,7 +65,7 @@ sardata = ['bakerc_16008_19060_037_190905_L090'] # original: bakerc_16008_19060_
 def maskNameFunction(str):
     maskName=str+'_landcovermask.tif'
     return maskName
-maskdata= [maskNameFunction(item) for item in sardata] # list(map(maskNameFunction, sardata))
+maskdata= list(map(maskNameFunction, sardata)) # [maskNameFunction(item) for item in sardata] # 
 # maskdata = ['ABoVE_LandCover_PAD_2018.tif']
 
 
@@ -111,27 +123,29 @@ sgfilterwindow = 51 # filter window size--larger windows yield more smoothing
 
 # #Area Correction (in order to make the data to generate the LUT)
 # print('DOING AREA CORRECTION...')
-# for num in range(0,len(sardata)):
-#     radiocal.batchcal(datapath, programpath, calibprog, geocodeprog, None,
+# for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
+#     radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, None,
 #                       calname='area_only', docorrectionflag=True, zerodemflag=True, 
-#                       createmaskflag=False, createlookflag=True, createslopeflag=False, 
-#                       overwriteflag=True, postprocessflag=False, pol=pol, hgtval=hgtval,
+#                       createmaskflag=False, createlookflag=True, createslopeflag=True, 
+#                       overwriteflag=False, postprocessflag=False, pol=pol, hgtval=hgtval,
 #                       scene=sardata[num])
 
 
 # LUT Creation
-# print('CREATING LUT...')
-# radiocal.createlut(datapath, sardata, maskdata, LUTpath, LUTname, allowed,
-#               pol=pol, corrstr='CX_01', min_cutoff=min_cutoff,
-#               max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
-#               sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
+print('CREATING LUT...')
+# for num in range(0,len(sardata)): 
+radiocal.createlut(datapath[num], [sardata[num]], maskdata, LUTpath, LUTname, allowed,
+            pol=pol, corrstr='area_only', min_cutoff=min_cutoff,
+            max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
+            sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
 
 
 
 # # LUT Correction
 print('DOING LUT CORRECTION...')
-radiocal.batchcal(datapath, programpath, calibprog, geocodeprog, LUTpath+'caltbl_'+LUTname,
-             calname=calname, docorrectionflag=True, zerodemflag=True, 
-             createmaskflag=True, createlookflag=True, createslopeflag=True, 
-             overwriteflag=False, postprocessflag=True, minlook=minlook, 
-             maxlook=maxlook, pol=pol, hgtval=hgtval)
+for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
+    radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, LUTpath+'caltbl_'+LUTname[num],
+                calname=calname, docorrectionflag=True, zerodemflag=True, 
+                createmaskflag=True, createlookflag=True, createslopeflag=True, 
+                overwriteflag=False, postprocessflag=True, minlook=minlook, 
+                maxlook=maxlook, pol=pol, hgtval=hgtval)
