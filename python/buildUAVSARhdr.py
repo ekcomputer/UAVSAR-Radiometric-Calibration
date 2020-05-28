@@ -26,14 +26,20 @@ def genHDRfromTXT(annFile, dataFile, pol=None): # pol is dummy variable to be co
     # parse data file basename to get polarization string
     dataFileBaseName = os.path.split(dataFile)[-1]
     dataFileBaseName = dataFileBaseName.replace('.grd','').replace('.slc','')
-    parseMethod=1
-    pol = dataFileBaseName[-10:-6] # this might need to be modified
-    for letter in pol:
-        if letter=='H' or letter=='V':
-            pass
-        else:
-            parseMethod=2
-            break
+    if pol != None:
+        parseMethod=0
+    else: 
+        pol = dataFileBaseName[-10:-6]
+        parseMethod=1
+     
+    ## condition and loops for parsing pol string    
+    if parseMethod==1:
+        for letter in pol:
+            if letter=='H' or letter=='V':
+                pass
+            else:
+                parseMethod=2
+                break
     if parseMethod==2:
         pol = dataFileBaseName.split('_')[5] # second parsing method
         for letter in pol:
