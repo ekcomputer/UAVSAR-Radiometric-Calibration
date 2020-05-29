@@ -22,7 +22,11 @@ import radiocal
 print('Starting radiocal example script.')
 
 # sardata_base
-sardatabase = ['bakerc_16008_18048_011_180822_L090_CX_02'] # ['bakerc_16008_19059_012_190904_L090_CX_01/'] # ['bakerc_16008_19060_037_190905_L090'] # original: bakerc_16008_19060_037_190905_L090HHVV_CX_01.mlc #['padelE_36000_18047_000_180821_L090'] # _L090_CX_01
+sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/rtc-test.txt' # path to list of UAVSAR IDs to run
+sardatabase=open(sardatabase_list).read().splitlines() # a list of UAVSAR IDs
+
+# uncomment for testing:
+# sardatabase = ['bakerc_16008_19059_012_190904_L090_CX_01/'] # ['bakerc_16008_18048_011_180822_L090_CX_02'] #  ['bakerc_16008_19060_037_190905_L090'] # original: bakerc_16008_19060_037_190905_L090HHVV_CX_01.mlc #['padelE_36000_18047_000_180821_L090'] # _L090_CX_01
 
 # Root names pointing to the UAVSAR data to use for LUT creation, excluding the polarization and correction type (which get appended to this string to produce the full filename).
 def sarDataPathNameFunction(sardata_str):
@@ -53,8 +57,8 @@ geocodeprog = programpath+'uavsar_geocode'
 # min and max look angles, if post processing is enabled...
 # look angles outside these bounds will be set to zero:
 # choose values that will definitely have data- if you get close to the real min/max look, be sure to set min_samples to a high value, i.e. 10,000 to filter out tall trees/mountains etc that can cause outliers
-minlook = 29 #24 # 20.86 for PAD 2017
-maxlook = 63 #64 # 65.55 for PAD 2017
+minlook = 24 #24 # 20.86 for PAD 2017
+maxlook = 64 #64 # 65.55 for PAD 2017
 
 # Polarizations to correct:
 pol = [0,1,2] #[0, 1, 2] #[0] #[0, 1, 2]
@@ -64,7 +68,7 @@ pol = [0,1,2] #[0, 1, 2] #[0] #[0, 1, 2]
 # len() of maskdata needs to be the same as the len() of sardata.
 
 def maskNameFunction(str):
-    maskName=str[0:-4]+'_landcovermask.tif'
+    maskName=str[0:-4]+'landcovermask.tif'
     return maskName
 maskdata= list(map(maskNameFunction, sardata)) # [maskNameFunction(item) for item in sardata] # 
 # maskdata = ['ABoVE_LandCover_PAD_2018.tif']
@@ -122,19 +126,19 @@ sgfilterwindow = 51 # filter window size--larger windows yield more smoothing
 
 
 
-# #Area Correction (in order to make the data to generate the LUT)
+# STEP 1: Area Correction (in order to make the data to generate the LUT)
 print('DOING AREA CORRECTION...')
-for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
+for num in range(0,len(sardata)): # do first and third steps all at once as loop; do second  steps as loops within each step
     radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, None,
                       calname='area_only', docorrectionflag=True, zerodemflag=True, 
                       createmaskflag=False, createlookflag=True, createslopeflag=True, 
                       overwriteflag=False, postprocessflag=False, pol=pol, hgtval=hgtval,
                       scene=sardata[num])
 
-# Create landcover mask images
+# STEP 2: Create landcover mask images
 for num in range(0,len(sardatabase)): 
     target_align_file = datapath[num]+sardata[num][0:-4]+'slope'+'.grd' # just need ground-projected file to align to 
-    landcover_file=datapath[num]+sardata[num][0:-4]+'_landcovermask.tif' # output of custom reprojection script
+    landcover_file=datapath[num]+sardata[num][0:-4]+'landcovermask.tif' # output of custom reprojection script
     if not os.path.isfile(landcover_file):
         print('BUILDING LANDCOVER MASKS FROM MOSAIC') # using my custom script (on path) to crop and reproject from landcover mosaic
         print(subprocess.getoutput('gdal_reproject_match.sh /att/nobackup/ekyzivat/landcover/ABoVE_LandCover.vrt ' \
@@ -142,17 +146,17 @@ for num in range(0,len(sardatabase)):
     else: 
         print('LANDCOVER MASK ALREADY BUILT')
 
-# LUT Creation
+# STEP 3: LUT Creation
 print('CREATING LUT...')
 # for num in range(0,len(sardata)): 
-radiocal.createlut(datapath[num], [sardata[num]], maskdata, LUTpath, LUTname, allowed,
+radiocal.createlut(datapath[num], [sardata[num]], maskdata, LUTpath, LUTname, allowed, # no loop bc creatlut already does loop over 3 polarizations
             pol=pol, corrstr='area_only', min_cutoff=min_cutoff,
             max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
             sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
 
 
 
-# # LUT Correction
+# STEP 4:  LUT Correction
 print('DOING LUT CORRECTION...')
 for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
     radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, LUTpath+'caltbl_'+LUTname[num],
