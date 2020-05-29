@@ -101,7 +101,8 @@ def batchcal(datapath, programpath, calibprog, geocodeprog, caltblroot,
         if file.endswith('.ann') and ((scene is None) or (scene in file)):
             print(file)
             rootname = file[0:-14]
-            hgtname = file[0:-4] + '_hgt.tif' #'.hgt'
+            hgtname_tif = file[0:-4] + '_hgt.tif' #'.hgt'
+            hgtname=file[0:-4]+'.hgt' # file to use for calib_exe, which expects binary format
             skip = False
             
             # Load the annotation file info:
@@ -116,14 +117,19 @@ def batchcal(datapath, programpath, calibprog, geocodeprog, caltblroot,
             grd_cols_str = str([s for s in anndata if 'grd_pwr.set_cols' in s]) # find string containing the number of grd columns
             grd_cols = int(str(grd_cols_str.split(sep='=')[1]).split(sep=';')[0])
             
+            # convert tif to binary format for calib_exe to work
+            translate_exe = 'gdal_translate -of ENVI -co "SUFFIX=ADD" '+hgtname_tif+' '+hgtname
+            print(subprocess.getoutput(translate_exe))
+            
             if (zerodemflag == True) and (docorrectionflag == True):
                 # Rename current DEM:
-                mvhgt_exec = 'mv '+hgtname+' '+hgtname+'_old'
+                mvhgt_exec = 'mv '+hgtname+' '+hgtname+'_orig'
                 print(subprocess.getoutput(mvhgt_exec))
                 
-                # Create flat DEM:
+                # Create flat DEM: # HERE I modified to write it with header file
                 zerodem = np.ones((grd_rows,grd_cols),dtype='float32') * hgtval
                 zerodem.tofile(hgtname)
+                # genHDRfromTXT(file,hgtname+'.grd','HHHH')
             
             # Take the latitude/longitude of the corners from the ann file:
             ULlat = str([s for s in anndata if 'Approximate Upper Left Latitude' in s])
@@ -196,7 +202,7 @@ def batchcal(datapath, programpath, calibprog, geocodeprog, caltblroot,
     
             if (zerodemflag == True) and (docorrectionflag == True):
                 # Put back the DEM:
-                mvhgt_exec = 'mv '+hgtname+'_old '+hgtname
+                mvhgt_exec = 'mv '+hgtname+'_orig '+hgtname
                 print(subprocess.getoutput(mvhgt_exec))
     
     
