@@ -308,7 +308,7 @@ def sgolay2d (z, window_size, order, derivative=None):
 
 
 
-def createlut(rootpath, sardata, maskdata, LUTpath, LUTnames, allowed,
+def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
               pol=[0,1,2], corrstr='area_only', min_cutoff=0,
               max_cutoff=np.inf, flatdemflag=False, sgfilterflag=True, 
               sgfilterwindow=51, min_look=22, max_look=65, min_samples=1):
@@ -383,7 +383,6 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTnames, allowed,
     
     for num in range(0,np.size(sardata)):
         rootname = sardata[num][0:-5]
-        LUTname=LUTnames[num] # allows LUT name to be assigned based on batch prefix
         driver = gdal.GetDriverByName('ENVI')
         driver.Register()
         

@@ -136,23 +136,24 @@ for num in range(0,len(sardata)): # do first and third steps all at once as loop
                       scene=sardata[num])
 
 # STEP 2: Create landcover mask images
+print('BUILDING LANDCOVER MASKS FROM MOSAIC') # using my custom script (on path) to crop and reproject from landcover mosaic
 for num in range(0,len(sardatabase)): 
     target_align_file = datapath[num]+sardata[num][0:-4]+'slope'+'.grd' # just need ground-projected file to align to 
     landcover_file=datapath[num]+sardata[num][0:-4]+'landcovermask.tif' # output of custom reprojection script
     if not os.path.isfile(landcover_file):
-        print('BUILDING LANDCOVER MASKS FROM MOSAIC') # using my custom script (on path) to crop and reproject from landcover mosaic
         print(subprocess.getoutput('gdal_reproject_match.sh /att/nobackup/ekyzivat/landcover/ABoVE_LandCover.vrt ' \
             +landcover_file + ' '+ target_align_file))# HERE
+        print('BUILT: {}'.format(landcover_file))
     else: 
-        print('LANDCOVER MASK ALREADY BUILT')
+        print('LANDCOVER MASK ALREADY BUILT: {}'.format(landcover_file))
 
 # STEP 3: LUT Creation
 print('CREATING LUT...')
-# for num in range(0,len(sardata)): 
-radiocal.createlut(datapath[num], [sardata[num]], maskdata, LUTpath, LUTname, allowed, # no loop bc creatlut already does loop over 3 polarizations
-            pol=pol, corrstr='area_only', min_cutoff=min_cutoff,
-            max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
-            sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
+for num in range(0,len(sardata)): 
+    radiocal.createlut(datapath[num], [sardata[num]], [maskdata[num]], LUTpath, LUTname[num], allowed, # no loop bc creatlut already does loop over 3 polarizations
+                pol=pol, corrstr='area_only', min_cutoff=min_cutoff,
+                max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
+                sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
 
 
 
@@ -162,5 +163,5 @@ for num in range(0,len(sardata)): # do first steps all at once as loop; do secon
     radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, LUTpath+'caltbl_'+LUTname[num],
                 calname=calname, docorrectionflag=True, zerodemflag=True, 
                 createmaskflag=True, createlookflag=True, createslopeflag=True, 
-                overwriteflag=False, postprocessflag=True, minlook=minlook, 
+                overwriteflag=False, postprocessflag=False, minlook=minlook, 
                 maxlook=maxlook, pol=pol, hgtval=hgtval)
