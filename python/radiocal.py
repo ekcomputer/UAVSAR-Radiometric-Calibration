@@ -101,7 +101,7 @@ def batchcal(datapath, programpath, calibprog, geocodeprog, caltblroot,
         if file.endswith('.ann') and ((scene is None) or (scene in file)):
             print(file)
             rootname = file[0:-14]
-            hgtname = file[0:-4] + '.hgt'
+            hgtname = file[0:-4] + '_hgt.tif' #'.hgt'
             skip = False
             
             # Load the annotation file info:

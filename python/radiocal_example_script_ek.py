@@ -13,6 +13,7 @@ Created on Tue May 26 11:32:00 2015
 """
 import numpy as np
 import os
+import subprocess
 
 import radiocal
 
@@ -21,7 +22,7 @@ import radiocal
 print('Starting radiocal example script.')
 
 # sardata_base
-sardatabase = ['bakerc_16008_18048_011_180822_L090_CX_02'] #['bakerc_16008_19060_037_190905_L090'] # original: bakerc_16008_19060_037_190905_L090HHVV_CX_01.mlc #['padelE_36000_18047_000_180821_L090'] # _L090_CX_01
+sardatabase = ['bakerc_16008_18048_011_180822_L090_CX_02'] # ['bakerc_16008_19059_012_190904_L090_CX_01/'] # ['bakerc_16008_19060_037_190905_L090'] # original: bakerc_16008_19060_037_190905_L090HHVV_CX_01.mlc #['padelE_36000_18047_000_180821_L090'] # _L090_CX_01
 
 # Root names pointing to the UAVSAR data to use for LUT creation, excluding the polarization and correction type (which get appended to this string to produce the full filename).
 def sarDataPathNameFunction(sardata_str):
@@ -34,7 +35,7 @@ data_base_pth = '/att/nobackup/ekyzivat/tmp/rtc'
 
 # Path to the UAVSAR data files:
 def dataPathNameFunction(data_base_pth, sardata_str):
-    datapath=os.path.join(data_base_pth, sardata_str, 'raw'+'/')
+    datapath=os.path.join(data_base_pth, sardata_str, 'raw'+os.sep)
     return datapath
 datapath = [dataPathNameFunction(data_base_pth, sardata_str) for sardata_str in sardatabase] # list(map(dataPathNameFunction, data_base_pth, sardata)) # '/att/nobackup/ekyzivat/tmp/rtc/bakerc_16008_18048_011_180822_L090_CX_02/raw/' # '/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw/'
 
@@ -52,31 +53,31 @@ geocodeprog = programpath+'uavsar_geocode'
 # min and max look angles, if post processing is enabled...
 # look angles outside these bounds will be set to zero:
 # choose values that will definitely have data- if you get close to the real min/max look, be sure to set min_samples to a high value, i.e. 10,000 to filter out tall trees/mountains etc that can cause outliers
-minlook = 25 #24 # 20.86 for PAD 2017
+minlook = 29 #24 # 20.86 for PAD 2017
 maxlook = 63 #64 # 65.55 for PAD 2017
 
 # Polarizations to correct:
-pol = [1] #[0, 1, 2] #[0] #[0, 1, 2]
+pol = [0,1,2] #[0, 1, 2] #[0] #[0, 1, 2]
 
 
 # Subpaths pointing to a land cover or mask image to use for each UAVSAR scene.
 # len() of maskdata needs to be the same as the len() of sardata.
 
 def maskNameFunction(str):
-    maskName=str+'_landcovermask.tif'
+    maskName=str[0:-4]+'_landcovermask.tif'
     return maskName
 maskdata= list(map(maskNameFunction, sardata)) # [maskNameFunction(item) for item in sardata] # 
 # maskdata = ['ABoVE_LandCover_PAD_2018.tif']
 
 
 # Path to save the LUT:
-LUTpath = '/att/nobackup/ekyzivat/tmp/rtc/lut/'
+LUTpath = '/att/nobackup/ekyzivat/tmp/rtc/lut/' # '/att/nobackup/ekyzivat/UAVSAR/asf.alaska.edu/lut/'
 
 # A name to describe the LUT:
 LUTname = sardata #'PAD2018'
 
 # A name to append to the filenames of the LUT corrected output:
-calname='grd_lut'
+calname='LUT'
 
 
 # The SAR image and the mask should have the same extents, pixel size, etc.
@@ -122,14 +123,24 @@ sgfilterwindow = 51 # filter window size--larger windows yield more smoothing
 
 
 # #Area Correction (in order to make the data to generate the LUT)
-# print('DOING AREA CORRECTION...')
-# for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
-#     radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, None,
-#                       calname='area_only', docorrectionflag=True, zerodemflag=True, 
-#                       createmaskflag=False, createlookflag=True, createslopeflag=True, 
-#                       overwriteflag=False, postprocessflag=False, pol=pol, hgtval=hgtval,
-#                       scene=sardata[num])
+print('DOING AREA CORRECTION...')
+for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
+    radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, None,
+                      calname='area_only', docorrectionflag=True, zerodemflag=True, 
+                      createmaskflag=False, createlookflag=True, createslopeflag=True, 
+                      overwriteflag=False, postprocessflag=False, pol=pol, hgtval=hgtval,
+                      scene=sardata[num])
 
+# Create landcover mask images
+for num in range(0,len(sardatabase)): 
+    target_align_file = datapath[num]+sardata[num][0:-4]+'slope'+'.grd' # just need ground-projected file to align to 
+    landcover_file=datapath[num]+sardata[num][0:-4]+'_landcovermask.tif' # output of custom reprojection script
+    if not os.path.isfile(landcover_file):
+        print('BUILDING LANDCOVER MASKS FROM MOSAIC') # using my custom script (on path) to crop and reproject from landcover mosaic
+        print(subprocess.getoutput('gdal_reproject_match.sh /att/nobackup/ekyzivat/landcover/ABoVE_LandCover.vrt ' \
+            +landcover_file + ' '+ target_align_file))# HERE
+    else: 
+        print('LANDCOVER MASK ALREADY BUILT')
 
 # LUT Creation
 print('CREATING LUT...')
