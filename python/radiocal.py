@@ -118,8 +118,10 @@ def batchcal(datapath, programpath, calibprog, geocodeprog, caltblroot,
             grd_cols = int(str(grd_cols_str.split(sep='=')[1]).split(sep=';')[0])
             
             # convert tif to binary format for calib_exe to work
-            translate_exe = 'gdal_translate -of ENVI -co "SUFFIX=ADD" '+hgtname_tif+' '+hgtname
-            print(subprocess.getoutput(translate_exe))
+            if not os.path.isfile(hgtname) or overwriteflag: # if binary .hgt file doesn't already exist
+                print('Converting .tif to binary: {} > {}'.format(hgtname_tif, hgtname))
+                translate_exe = 'gdal_translate -of ENVI -co "SUFFIX=ADD" '+hgtname_tif+' '+hgtname
+                print(subprocess.getoutput(translate_exe))
             
             if (zerodemflag == True) and (docorrectionflag == True):
                 # Rename current DEM:

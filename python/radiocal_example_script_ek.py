@@ -140,10 +140,10 @@ print('BUILDING LANDCOVER MASKS FROM MOSAIC') # using my custom script (on path)
 for num in range(0,len(sardatabase)): 
     target_align_file = datapath[num]+sardata[num][0:-4]+'slope'+'.grd' # just need ground-projected file to align to 
     landcover_file=datapath[num]+sardata[num][0:-4]+'landcovermask.tif' # output of custom reprojection script
-    if not os.path.isfile(landcover_file):
+    if not os.path.isfile(landcover_file): # maybe add "or overwriteflag"
+        print('BUILDING: {}'.format(landcover_file))
         print(subprocess.getoutput('gdal_reproject_match.sh /att/nobackup/ekyzivat/landcover/ABoVE_LandCover.vrt ' \
             +landcover_file + ' '+ target_align_file))# HERE
-        print('BUILT: {}'.format(landcover_file))
     else: 
         print('LANDCOVER MASK ALREADY BUILT: {}'.format(landcover_file))
 
