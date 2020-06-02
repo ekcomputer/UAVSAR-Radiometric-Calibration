@@ -22,7 +22,7 @@ import radiocal
 print('Starting radiocal example script.')
 
 # sardata_base
-sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/rtc-test.txt' # path to list of UAVSAR IDs to run
+sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/rtc-test-1.txt' # path to list of UAVSAR IDs to run
 sardatabase=open(sardatabase_list).read().splitlines() # a list of UAVSAR IDs
 
 # uncomment for testing:
@@ -61,7 +61,7 @@ minlook = 24 #24 # 20.86 for PAD 2017
 maxlook = 64 #64 # 65.55 for PAD 2017
 
 # Polarizations to correct:
-pol = [0,1,2] #[0, 1, 2] #[0] #[0, 1, 2]
+pol = [0] #[0, 1, 2] #[0] #[0, 1, 2]
 
 
 # Subpaths pointing to a land cover or mask image to use for each UAVSAR scene.
@@ -106,7 +106,7 @@ min_cutoff = 0 # pixels below this will be excluded
 
 
 # Set to true to assume range slope is zero, false otherwise:
-flatdemflag = False # HERE change
+flatdemflag = True # HERE change
 
 # Constant height value for the created flat DEM:
 hgtval = 180

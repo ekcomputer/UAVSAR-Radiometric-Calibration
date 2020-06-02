@@ -396,7 +396,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         mask = mask.ReadAsArray()
 
         # binarize landcover classification to only include classes of interest
-        if 1==0: # quick fix to use all of mask without loading external file
+        if 1==1: # quick fix to use all of mask without loading external file
             mask_bool = np.zeros(mask.shape,dtype='bool')
             for val in range(0,np.size(allowed)):
                 mask_bool = mask_bool | (mask == allowed[val])
@@ -405,6 +405,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
             mask_bool = np.ones (mask.shape,dtype='bool')
             
         look_pth = rootpath+rootname+'_look.grd'
+        # look_pth = '/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw/run_auto_name/padelE_36000_18047_000_180821_look.grd' # for testing: intermediate/bespoke GRD file
         if not os.path.isfile(look_pth):
             raise IOError('File: {} not found.'.format(look_pth))
         look = gdal.Open(look_pth,gdal.GA_ReadOnly)
@@ -443,6 +444,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         for p in range(0,np.size(pol)): # loop through HHHH, HHHHV, etc. for each scene
             # sarimage_pth=rootpath+sardata[num]+pol_str[pol[p]]+'_'+corrstr+'.grd' # manual
             sarimage_pth=rootpath+rootname+'_'+pol_str[pol[p]]+'_'+corrstr+'.grd' # auto naming    
+            # sarimage_pth='/att/nobackup/ekyzivat/tmp/rtc/padelE_36000_18047_000_180821_L090_CX_01/raw/padelE_36000_18047_000_180821_L090HHHH_CX_01.grd' # (For testing)
             if not os.path.isfile(sarimage_pth):
                 raise IOError('File: {} not found.'.format(sarimage_pth))       
             print('Processing '+sarimage_pth+' ...')
