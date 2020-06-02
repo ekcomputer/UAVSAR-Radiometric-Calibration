@@ -17,7 +17,7 @@ echo "  Started at:           " `/bin/date`
 
 source activate base
 
-# srun allows printing in real time?
+# srun allows printing in real time? No
 python /home/ekyzivat/scripts/UAVSAR-Radiometric-Calibration-fork/python/radiocal_example_script_ek.py
 
 ## Reporting stop ###############################

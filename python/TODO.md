@@ -1,8 +1,6 @@
 List of changes to be made:
 
 * add multiprocessing to increase speed, or vectorize LUT process in radiocal.py
-* add auto no-overwrite
-* add auto gdal warp to extract landcover mask raster
 * add cropping procedure into workflow?
 * add auto min/max look angle masking?
 * **set min/max_look and min_samples to dynamically update based on image size and look geom**
@@ -22,6 +20,8 @@ Done:
 * rename _slope.grd -> .slope
 * Change 'allowed' back to all 14 classes
 * add defensive checks for improper file naming or missing files
+* add auto gdal warp to extract landcover mask raster
+* add auto no-overwrite
 
 For pull request:
 * include LUT folder

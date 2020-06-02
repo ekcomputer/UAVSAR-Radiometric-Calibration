@@ -61,7 +61,7 @@ minlook = 24 #24 # 20.86 for PAD 2017
 maxlook = 64 #64 # 65.55 for PAD 2017
 
 # Polarizations to correct:
-pol = [0] #[0, 1, 2] #[0] #[0, 1, 2]
+pol = [0,1,2] #[0, 1, 2] #[0] #[0, 1, 2]
 
 
 # Subpaths pointing to a land cover or mask image to use for each UAVSAR scene.
