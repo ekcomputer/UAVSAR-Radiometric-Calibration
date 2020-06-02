@@ -14,6 +14,9 @@ Created on Tue May 26 11:32:00 2015
 import numpy as np
 import os
 import subprocess
+import multiprocessing as mp
+from multiprocessing import Pool
+
 
 import radiocal
 
@@ -128,12 +131,25 @@ sgfilterwindow = 51 # filter window size--larger windows yield more smoothing
 
 # STEP 1: Area Correction (in order to make the data to generate the LUT)
 print('DOING AREA CORRECTION...')
+pool = Pool(mp.cpu_count())
 for num in range(0,len(sardata)): # do first and third steps all at once as loop; do second  steps as loops within each step
-    radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, None,
-                      calname='area_only', docorrectionflag=True, zerodemflag=True, 
-                      createmaskflag=False, createlookflag=True, createslopeflag=True, 
-                      overwriteflag=False, postprocessflag=False, pol=pol, hgtval=hgtval,
-                      scene=sardata[num])
+    pool.apply_async(radiocal.batchcal, args=(datapath[num], programpath, calibprog, geocodeprog, 
+                                              None,         # caltblroot
+                                              'area_only',  # calname
+                                              True,         # docorrectionflag
+                                              True,         # zerodemflag
+                                              False,        # createmaskflag
+                                              True,         #  createlookflag
+                                              True,         # createslopeflag
+                                              False,        # overwriteflag
+                                              False,        # postprocessflag
+                                              minlook,      # minlook
+                                              maxlook,      # maxlook
+                                              pol,          # pol
+                                              hgtval,       # hgtval
+                                              sardata[num])) # scene  
+                                              #     radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, None, calname='area_only', docorrectionflag=True, zerodemflag=True, createmaskflag=False, createlookflag=True, createslopeflag=True,  overwriteflag=False, postprocessflag=False, pol=pol, hgtval=hgtval, scene=sardata[num])
+# pool.join()
 
 # STEP 2: Create landcover mask images
 print('BUILDING LANDCOVER MASKS FROM MOSAIC') # using my custom script (on path) to crop and reproject from landcover mosaic
@@ -150,18 +166,31 @@ for num in range(0,len(sardatabase)):
 # STEP 3: LUT Creation
 print('CREATING LUT...')
 for num in range(0,len(sardata)): 
-    radiocal.createlut(datapath[num], [sardata[num]], [maskdata[num]], LUTpath, LUTname[num], allowed, # no loop bc creatlut already does loop over 3 polarizations
-                pol=pol, corrstr='area_only', min_cutoff=min_cutoff,
-                max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, 
-                sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10)
-
+    pool.apply_async(radiocal.createlut, args=(datapath[num], [sardata[num]], [maskdata[num]], LUTpath, LUTname[num], allowed, # no loop bc creatlut already does loop over 3 polarizations
+                pol, 'area_only', min_cutoff,
+                max_cutoff, flatdemflag, sgfilterflag, 
+                sgfilterwindow, minlook, maxlook, 10)) # datapath[num], [sardata[num]], [maskdata[num]], LUTpath, LUTname[num], allowed, # no loop bc creatlut already does loop over 3 polarizationspol=pol, corrstr='area_only', min_cutoff=min_cutoff,max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10))
+# pool.join()
 
 
 # STEP 4:  LUT Correction
 print('DOING LUT CORRECTION...')
 for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
-    radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, LUTpath+'caltbl_'+LUTname[num],
-                calname=calname, docorrectionflag=True, zerodemflag=True, 
-                createmaskflag=True, createlookflag=True, createslopeflag=True, 
-                overwriteflag=False, postprocessflag=False, minlook=minlook, 
-                maxlook=maxlook, pol=pol, hgtval=hgtval)
+    pool.apply_async(radiocal.batchcal, args=(datapath[num], programpath, calibprog, geocodeprog, 
+                                              LUTpath+'caltbl_'+LUTname[num], # caltblroot      
+                                              'area_only',  # calname
+                                              True,         # docorrectionflag
+                                              True,         # zerodemflag
+                                              True,         # createmaskflag
+                                              True,         #  createlookflag
+                                              True,         # createslopeflag
+                                              False,        # overwriteflag
+                                              False,        # postprocessflag
+                                              minlook,      # minlook
+                                              maxlook,      # maxlook
+                                              pol,          # pol
+                                              hgtval,       # hgtval
+                                              None)) # scene  
+ # radiocal.batchcal, args=(datapath[num], programpath, calibprog, geocodeprog, LUTpath+'caltbl_'+LUTname[num],calname=calname, docorrectionflag=True, zerodemflag=True, createmaskflag=True, createlookflag=True, createslopeflag=True, overwriteflag=False, postprocessflag=False, minlook=minlook, maxlook=maxlook, pol=pol, hgtval=hgtval))
+pool.close()
+pool.join()
