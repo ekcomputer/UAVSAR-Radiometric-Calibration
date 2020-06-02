@@ -137,11 +137,11 @@ for num in range(0,len(sardata)): # do first and third steps all at once as loop
                                               None,         # caltblroot
                                               'area_only',  # calname
                                               True,         # docorrectionflag
-                                              True,         # zerodemflag
+                                              False,         # zerodemflag
                                               False,        # createmaskflag
                                               True,         #  createlookflag
                                               True,         # createslopeflag
-                                              False,        # overwriteflag
+                                              True,        # overwriteflag
                                               False,        # postprocessflag
                                               minlook,      # minlook
                                               maxlook,      # maxlook
@@ -178,19 +178,19 @@ print('DOING LUT CORRECTION...')
 for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
     pool.apply_async(radiocal.batchcal, args=(datapath[num], programpath, calibprog, geocodeprog, 
                                               LUTpath+'caltbl_'+LUTname[num], # caltblroot      
-                                              'area_only',  # calname
+                                              calname,  # calname
                                               True,         # docorrectionflag
-                                              True,         # zerodemflag
+                                              False,         # zerodemflag
                                               True,         # createmaskflag
                                               True,         #  createlookflag
                                               True,         # createslopeflag
-                                              False,        # overwriteflag
+                                              True,        # overwriteflag
                                               False,        # postprocessflag
                                               minlook,      # minlook
                                               maxlook,      # maxlook
                                               pol,          # pol
                                               hgtval,       # hgtval
-                                              None)) # scene  
+                                              sardata[num])) # scene  
  # radiocal.batchcal, args=(datapath[num], programpath, calibprog, geocodeprog, LUTpath+'caltbl_'+LUTname[num],calname=calname, docorrectionflag=True, zerodemflag=True, createmaskflag=True, createlookflag=True, createslopeflag=True, overwriteflag=False, postprocessflag=False, minlook=minlook, maxlook=maxlook, pol=pol, hgtval=hgtval))
 pool.close()
 pool.join()
