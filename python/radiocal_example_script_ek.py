@@ -97,7 +97,7 @@ calname='LUT'
 # Note: For Louisiana data using CCAP land cover, classes 15 and 18 are both
 # emergent wetland (18: Estuarine Emergent Wetland, and 15: Palustrine
 # Emergent Wetland).
-allowed = range(1, 16) #[14] #range(1, 16) # 14 refers to barren class!
+allowed = range(1, 16) # [1, 2, 3, 4, 5, 6] # [14] # range(1, 16) # 14 refers to barren class! # 13 and 15 are water, 1-4 are trees, 5 and 6 are shrubs 
 
 
 # These settings determine which pixels we use to generate the LUT, and which pixels are excluded, based on backscatter.
@@ -127,11 +127,12 @@ hgtval = 180
 sgfilterflag = True # set to True to filter, False to leave alone
 sgfilterwindow = 51 # filter window size--larger windows yield more smoothing
 
-
+# parallel pool size
+pool_size=mp.cpu_count() # change for custom
 
 # STEP 1: Area Correction (in order to make the data to generate the LUT)
 print('DOING AREA CORRECTION...')
-pool = Pool(mp.cpu_count())
+pool = Pool(pool_size)
 for num in range(0,len(sardata)): # do first and third steps all at once as loop; do second  steps as loops within each step
     pool.apply_async(radiocal.batchcal, args=(datapath[num], programpath, calibprog, geocodeprog, 
                                               None,         # caltblroot
@@ -149,7 +150,8 @@ for num in range(0,len(sardata)): # do first and third steps all at once as loop
                                               hgtval,       # hgtval
                                               sardata[num])) # scene  
                                               #     radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, None, calname='area_only', docorrectionflag=True, zerodemflag=True, createmaskflag=False, createlookflag=True, createslopeflag=True,  overwriteflag=False, postprocessflag=False, pol=pol, hgtval=hgtval, scene=sardata[num])
-# pool.join()
+pool.close()
+pool.join()
 
 # STEP 2: Create landcover mask images
 print('BUILDING LANDCOVER MASKS FROM MOSAIC') # using my custom script (on path) to crop and reproject from landcover mosaic
@@ -165,16 +167,19 @@ for num in range(0,len(sardatabase)):
 
 # STEP 3: LUT Creation
 print('CREATING LUT...')
+pool = Pool(pool_size)
 for num in range(0,len(sardata)): 
     pool.apply_async(radiocal.createlut, args=(datapath[num], [sardata[num]], [maskdata[num]], LUTpath, LUTname[num], allowed, # no loop bc creatlut already does loop over 3 polarizations
                 pol, 'area_only', min_cutoff,
                 max_cutoff, flatdemflag, sgfilterflag, 
                 sgfilterwindow, minlook, maxlook, 10)) # datapath[num], [sardata[num]], [maskdata[num]], LUTpath, LUTname[num], allowed, # no loop bc creatlut already does loop over 3 polarizationspol=pol, corrstr='area_only', min_cutoff=min_cutoff,max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10))
-# pool.join()
+pool.close()
+pool.join()
 
 
 # STEP 4:  LUT Correction
 print('DOING LUT CORRECTION...')
+pool = Pool(pool_size)
 for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
     pool.apply_async(radiocal.batchcal, args=(datapath[num], programpath, calibprog, geocodeprog, 
                                               LUTpath+'caltbl_'+LUTname[num], # caltblroot      
