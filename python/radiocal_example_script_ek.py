@@ -191,8 +191,8 @@ for num in range(0,len(sardata)): # do first steps all at once as loop; do secon
                                               True,         # createslopeflag
                                               True,        # overwriteflag
                                               False,        # postprocessflag
-                                              minlook,      # minlook
-                                              maxlook,      # maxlook
+                                              None,      # minlook
+                                              None,      # maxlook
                                               pol,          # pol
                                               hgtval,       # hgtval
                                               sardata[num])) # scene  
