@@ -121,11 +121,13 @@ def batchcal(datapath, programpath, calibprog, geocodeprog, caltblroot,
             if not os.path.isfile(hgtname) or overwriteflag: # if binary .hgt file doesn't already exist
                 print('Converting .tif to binary: {} > {}'.format(hgtname_tif, hgtname))
                 translate_exe = 'gdal_translate -of ENVI -co "SUFFIX=ADD" '+hgtname_tif+' '+hgtname
+                print('Executing: ' + translate_exe)
                 print(subprocess.getoutput(translate_exe))
             
             if (zerodemflag == True) and (docorrectionflag == True):
                 # Rename current DEM:
                 mvhgt_exec = 'mv '+hgtname+' '+hgtname+'_orig'
+                print('Executing: ' + mvhgt_exec)
                 print(subprocess.getoutput(mvhgt_exec))
                 
                 # Create flat DEM: # HERE I modified to write it with header file
@@ -176,7 +178,9 @@ def batchcal(datapath, programpath, calibprog, geocodeprog, caltblroot,
                     geocode_exec = geocodeprog+' '+mlcfile+' '+str(mlc_cols)+' geomap_uavsar.trans '+grdfile+' '+str(grd_cols)+' '+str(grd_rows)
                     
                     if docorrectionflag == True:
+                        print('Executing: ' + calib_exec)
                         print(subprocess.getoutput(calib_exec))
+                        print('Executing: ' + geocode_exec)
                         print(subprocess.getoutput(geocode_exec))
                         
                         # Create header file:
@@ -187,16 +191,19 @@ def batchcal(datapath, programpath, calibprog, geocodeprog, caltblroot,
             if (docorrectionflag == True) and (skip == False):
                 if createmaskflag == True:
                     geocode_mask_exec = geocodeprog + ' mask_temp '+str(mlc_cols)+' geomap_uavsar.trans '+rootname+'mask.grd '+str(grd_cols)+' '+str(grd_rows)
+                    print('Executing: ' + geocode_mask_exec)
                     print(subprocess.getoutput(geocode_mask_exec))
                     genHDRfromTXT(file,rootname+'mask.grd',pol_str[0])
     
                 if createslopeflag == True:
                     mvslope_exec = 'mv slope_temp '+rootname+'slope.grd'
+                    print('Executing: ' + mvslope_exec)
                     print(subprocess.getoutput(mvslope_exec))
                     genHDRfromTXT(file,rootname+'slope.grd',pol_str[0])
                     
                 if createlookflag == True:
                     mvlook_exec = 'mv look_temp '+rootname+'look.grd'
+                    print('Executing: ' + mvlook_exec)
                     print(subprocess.getoutput(mvlook_exec))
                     genHDRfromTXT(file,rootname+'look.grd',pol_str[0])
     
@@ -205,6 +212,7 @@ def batchcal(datapath, programpath, calibprog, geocodeprog, caltblroot,
             if (zerodemflag == True) and (docorrectionflag == True):
                 # Put back the DEM:
                 mvhgt_exec = 'mv '+hgtname+'_orig '+hgtname
+                print('Executing: ' + mvhgt_exec)
                 print(subprocess.getoutput(mvhgt_exec))
     
     
