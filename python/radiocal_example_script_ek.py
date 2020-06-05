@@ -25,7 +25,7 @@ import radiocal
 print('Starting radiocal example script.')
 
 # sardata_base
-sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/rtc-test-1.txt' # path to list of UAVSAR IDs to run
+sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/rtc-run-1.txt' #  rtc-test-1.txt' # path to list of UAVSAR IDs to run
 sardatabase=open(sardatabase_list).read().splitlines() # a list of UAVSAR IDs
 
 # uncomment for testing:
@@ -38,7 +38,7 @@ def sarDataPathNameFunction(sardata_str):
 sardata = [sarDataPathNameFunction(sardata_str) for sardata_str in sardatabase] 
 
 # Parent path to UAVSAR data files:
-data_base_pth = '/att/nobackup/ekyzivat/tmp/rtc'
+data_base_pth = '/att/nobackup/ekyzivat/UAVSAR/asf.alaska.edu' # '/att/nobackup/ekyzivat/tmp/rtc'
 
 # Path to the UAVSAR data files:
 def dataPathNameFunction(data_base_pth, sardata_str):
@@ -78,7 +78,7 @@ maskdata= list(map(maskNameFunction, sardata)) # [maskNameFunction(item) for ite
 
 
 # Path to save the LUT:
-LUTpath = '/att/nobackup/ekyzivat/tmp/rtc/lut/' # '/att/nobackup/ekyzivat/UAVSAR/asf.alaska.edu/lut/'
+LUTpath = '/att/nobackup/ekyzivat/UAVSAR/asf.alaska.edu/lut/' # '/att/nobackup/ekyzivat/tmp/rtc/lut/' # '/att/nobackup/ekyzivat/UAVSAR/asf.alaska.edu/lut/'
 
 # A name to describe the LUT:
 LUTname = sardata #'PAD2018'
@@ -142,7 +142,7 @@ for num in range(0,len(sardata)): # do first and third steps all at once as loop
                                               False,        # createmaskflag
                                               True,         #  createlookflag
                                               True,         # createslopeflag
-                                              True,        # overwriteflag
+                                              False,        # overwriteflag
                                               False,        # postprocessflag
                                               minlook,      # minlook
                                               maxlook,      # maxlook
@@ -189,7 +189,7 @@ for num in range(0,len(sardata)): # do first steps all at once as loop; do secon
                                               True,         # createmaskflag
                                               True,         #  createlookflag
                                               True,         # createslopeflag
-                                              True,        # overwriteflag
+                                              False,        # overwriteflag
                                               False,        # postprocessflag
                                               None,      # minlook
                                               None,      # maxlook
