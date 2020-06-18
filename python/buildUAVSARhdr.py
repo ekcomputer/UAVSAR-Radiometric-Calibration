@@ -135,7 +135,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=str, help="Specify the input UAVSAR ann file")
     parser.add_argument("-r", "--uavsar", type=str, help="Specify the input UAVSAR radar file")
-    parser.add_argument("-p", "--polarization", type=str, help="Specify the input UAVSAR polarization in UPPERCASE (i.e HHHV)- this is actually a dummy variable- polarization should be automatically parsed")
+    parser.add_argument("-p", "--polarization", type=str, help="Specify the input UAVSAR polarization in UPPERCASE (i.e HHHV)- this is actually a dummy variable- polarization should be automatically parsed if no argumen is given.")
 
     args = parser.parse_args()
 

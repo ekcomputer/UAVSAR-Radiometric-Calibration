@@ -552,7 +552,7 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
         look_high_bin = int(np.floor(max_look*10))-1
         
         if np.nanmean(LUT[:, look_low_bin],axis=0)<0.001 or np.nanmean(LUT[:, look_high_bin],axis=0)<0.001: # something is wrong (min or max bounds must be too wide): extrapolated value is close to zero
-            assert ValueError('Something is wrong (min or max bounds must be too wide): extrapolated value is close to zero ({} {})'.format(np.nanmean(LUT[:, look_low_bin],axis=0), np.nanmean(LUT[:, look_high_bin],axis=0)))
+            assert ValueError('Warning: Something is wrong (min or max bounds must be too wide): extrapolated value is close to zero ({} {})'.format(np.nanmean(LUT[:, look_low_bin],axis=0), np.nanmean(LUT[:, look_high_bin],axis=0)))
         LUT[:,0:look_low_bin] = LUT[:,look_low_bin,np.newaxis]       
         LUT[:,look_high_bin+1:] = LUT[:,look_high_bin,np.newaxis]
 
