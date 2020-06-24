@@ -422,8 +422,8 @@ def createlut(rootpath, sardata, maskdata, LUTpath, LUTname, allowed,
     
         # Auto min/max look
         if min_look==None and max_look==None:
-            min_look=np.percentile(look, 5)
-            max_look=np.percentile(look, 95)
+            min_look=np.percentile(look[look>0], 5)
+            max_look=np.percentile(look[look>0], 95)
         
         # Mask out look angles outside the range:
         mask_bool = mask_bool & (look > min_look) & (look < max_look)
