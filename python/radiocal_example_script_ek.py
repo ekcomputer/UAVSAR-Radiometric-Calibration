@@ -25,7 +25,7 @@ import radiocal
 print('Starting radiocal example script.')
 
 # sardata_base
-sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/rtc-run-1.txt' #  rtc-test-1.txt' # path to list of UAVSAR IDs to run
+sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/all-2020-June-19-use.txt' #  rtc-run-1.txt rtc-test-1.txt' # path to list of UAVSAR IDs to run
 sardatabase=open(sardatabase_list).read().splitlines() # a list of UAVSAR IDs
 
 # uncomment for testing:
@@ -172,7 +172,7 @@ for num in range(0,len(sardata)):
     pool.apply_async(radiocal.createlut, args=(datapath[num], [sardata[num]], [maskdata[num]], LUTpath, LUTname[num], allowed, # no loop bc creatlut already does loop over 3 polarizations
                 pol, 'area_only', min_cutoff,
                 max_cutoff, flatdemflag, sgfilterflag, 
-                sgfilterwindow, minlook, maxlook, 10)) # datapath[num], [sardata[num]], [maskdata[num]], LUTpath, LUTname[num], allowed, # no loop bc creatlut already does loop over 3 polarizationspol=pol, corrstr='area_only', min_cutoff=min_cutoff,max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10))
+                sgfilterwindow, None, None, 10)) # datapath[num], [sardata[num]], [maskdata[num]], LUTpath, LUTname[num], allowed, # no loop bc creatlut already does loop over 3 polarizationspol=pol, corrstr='area_only', min_cutoff=min_cutoff,max_cutoff=max_cutoff, flatdemflag=flatdemflag, sgfilterflag=sgfilterflag, sgfilterwindow=sgfilterwindow, min_look=minlook, max_look=maxlook, min_samples=10))
 pool.close()
 pool.join()
 
@@ -189,10 +189,10 @@ for num in range(0,len(sardata)): # do first steps all at once as loop; do secon
                                               True,         # createmaskflag
                                               True,         #  createlookflag
                                               True,         # createslopeflag
-                                              False,        # overwriteflag
+                                              True,        # overwriteflag
                                               False,        # postprocessflag
-                                              None,      # minlook
-                                              None,      # maxlook
+                                              minlook,      # minlook
+                                              maxlook,      # maxlook
                                               pol,          # pol
                                               hgtval,       # hgtval
                                               sardata[num])) # scene  
