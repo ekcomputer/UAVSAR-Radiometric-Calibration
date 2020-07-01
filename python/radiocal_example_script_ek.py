@@ -16,8 +16,7 @@ import os
 import subprocess
 import multiprocessing as mp
 from multiprocessing import Pool
-
-
+import complex_RTC # local fxn
 import radiocal
 
 
@@ -85,7 +84,6 @@ LUTname = sardata #'PAD2018'
 
 # A name to append to the filenames of the LUT corrected output:
 calname='LUT'
-corrstr='CX_01' # default value
 
 # The SAR image and the mask should have the same extents, pixel size, etc.
 # Trim the mask to the correct size (e.g., in QGIS) before running this.
@@ -200,18 +198,19 @@ for num in range(0,len(sardata)): # do first steps all at once as loop; do secon
 pool.close()
 pool.join()
 
-# STEP 4:  Complex LUT Correction
+# STEP 5:  Complex LUT Correction
 print('DOING Complex LUT CORRECTION...')
 pool = Pool(pool_size)
 for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
+    corrstr=sardatabase[num][-5:] # 'CX_01' or 'CX_02'
     pool.apply_async(complex_RTC.complexRTC, args=(
-        sardatabase[num], #'bakerc_16008_19059_012_190904_L090',                                                   # base
-        sardata[num], #'bakerc_16008_19059_012_190904',                                                        # lutBase=
+        sardata[num], #'bakerc_16008_19059_012_190904_L090',                                                   # base
+        sardata[num][:-5], #'bakerc_16008_19059_012_190904',                                                        # lutBase=
         corrstr, #'CX_01',                                                                                # corrstr
-        datapath[num], #'/mnt/f/UAVSAR/bakerc_16008_19059_012_190904_L090_CX_01/raw/LUT',                       # lutDir=
         calname, # 'LUT',                                                                                  # calname=
-        datapath[num][:-3]+'orig_grd', #'/mnt/f/UAVSAR/bakerc_16008_19059_012_190904_L090_CX_01/raw/orig_grd',                  # origDir=
-        datapath[num][:-3]+'complex-lut')) #'/mnt/f/UAVSAR/bakerc_16008_19059_012_190904_L090_CX_01/raw/auto_test'))                # outDir=
+        datapath[num], #'/mnt/f/UAVSAR/bakerc_16008_19059_012_190904_L090_CX_01/raw/LUT',                       # lutDir=
+        datapath[num][:-4]+'default_grd', #'/mnt/f/UAVSAR/bakerc_16008_19059_012_190904_L090_CX_01/raw/orig_grd',                  # origDir=
+        datapath[num][:-4]+'complex_lut')) #'/mnt/f/UAVSAR/bakerc_16008_19059_012_190904_L090_CX_01/raw/auto_test'))                # outDir=
 
 pool.close()
 pool.join()
