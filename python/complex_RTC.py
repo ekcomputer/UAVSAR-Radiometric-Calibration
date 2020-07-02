@@ -25,21 +25,22 @@ def complexRTC(base, lutBase, corrstr, calname, lutDir,origDir, outDir):
         
             ## copy LUT-corrected real GRD image files
         pthGRD_lut_orig=os.path.join(lutDir, lutBase + '_' + pol_real[i] + '_' + calname + '.grd')
-        pthGRD_lut_copy=os.path.join(outDir, base + pol_real[i] + '_' + corrstr + '.grd')
-        pthANN_orig=os.path.join(origDir, base + '_' + corrstr + '.ann')
-        pthANN_copy=os.path.join(outDir, base + '_' + corrstr + '.ann')
+        pthGRD_lut_copy=os.path.join(outDir, base + pol_real[i] + '_' + corrstr + '.grd') # HERE somehow this cp is not working
+        pthANN_orig=os.path.join(lutDir, base + '_' + corrstr + '.ann') # copy .ann from 'raw' dir bc its guaranteed to be there
+        pthANN_copy_1=os.path.join(outDir, base + '_' + corrstr + '.ann')
+        pthANN_copy_2=os.path.join(origDir, base + '_' + corrstr + '.ann')
         
         # shutil.copy2(pthGRD_orig, pthGRD_copy)
         subprocess.getoutput('cp -r '+pthGRD_lut_orig+' '+pthGRD_lut_copy) # executes as parallel 
-        subprocess.getoutput('cp -r '+pthGRD_lut_orig +'.hdr' +' '+pthGRD_lut_copy + '.hdr') # HERE write header file for equiv with default GRD < ---------------------------------------------------------
-        # executes as parallel thread in subshell, but doesn't return errors # HERE os
+        subprocess.getoutput('cp -r '+pthGRD_lut_orig +'.hdr' +' '+pthGRD_lut_copy + '.hdr')
         print('Copied \t{} \t to\n\t {}'.format(pthGRD_lut_orig, pthGRD_lut_copy))
-        if i==2: # last time only
-            subprocess.getoutput('cp -r '+pthANN_orig+' '+pthANN_copy)
-            print('Copied ANN \t{} \t to\n\t {}'.format(pthANN_orig, pthANN_copy))
+        if i==0: # first time only
+            subprocess.getoutput('cp -r '+pthANN_orig+' '+pthANN_copy_1) # padelE_36000_17093_007_170908_L090_CX_01/raw/padelE_36000_17093_007_170908_L090_CX_01.ann ---> padelE_36000_17093_007_170908_L090_CX_01/complex_lut/padelE_36000_17093_007_170908_L090_CX_01.ann
+            subprocess.getoutput('cp -r '+pthANN_orig+' '+pthANN_copy_2) # padelE_36000_17093_007_170908_L090_CX_01/raw/padelE_36000_17093_007_170908_L090_CX_01.ann ---> padelE_36000_17093_007_170908_L090_CX_01/orig_grd/padelE_36000_17093_007_170908_L090_CX_01.ann
+            print('Copied ANN \t{} \t to\n\t {}\tand\n\t {}'.format(pthANN_orig, pthANN_copy_1, pthANN_copy_2))
         # subprocess.getoutput('cp '+pthGRD_orig+' '+pthGRD_copy)
 
-            ## load real
+            ## build real-valued grd paths
         pthA1=os.path.join(origDir, base + pol_real[i] + '_' + corrstr + '.grd')
         pthB1=pthGRD_lut_orig
         pthOut1=os.path.join(outDir, pol_real[i] + '_GeomLut_factor.tif')
@@ -50,7 +51,7 @@ def complexRTC(base, lutBase, corrstr, calname, lutDir,origDir, outDir):
             ## calculate correction ratio between default GRD and RTC GRD
         cmd='gdal_calc.py --quiet -A ' + pthA1 + ' -B ' + pthB1 + ' --calc=B/A --co=COMPRESS=LZW --NoDataValue=-9999 --overwrite --outfile=' + pthOut1
         print('Executing:\n\t {}'.format(cmd))
-        subprocess.getoutput(cmd) # HERE
+        subprocess.getoutput(cmd)
 
     for i in range(3):        
             ## load for complex
