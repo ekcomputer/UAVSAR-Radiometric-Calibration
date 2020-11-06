@@ -152,7 +152,7 @@ def main():
         os._exit(1)
 
 
-    genHDRfromTXT(args.input, args.uavsar)
+    genHDRfromTXT(args.input, args.uavsar, args.polarization)
 
 
 if __name__ == "__main__":

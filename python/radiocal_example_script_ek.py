@@ -24,7 +24,7 @@ import radiocal
 print('Starting radiocal example script.')
 
 # sardata_base
-sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/all-2020-June-19-use.txt' #  rtc-run-1.txt rtc-test-1.txt' # path to list of UAVSAR IDs to run
+sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/Fairbanks-2020-July-16.txt' #  rtc-run-1.txt rtc-test-1.txt' # path to list of UAVSAR IDs to run
 sardatabase=open(sardatabase_list).read().splitlines() # a list of UAVSAR IDs
 
 # uncomment for testing:
@@ -126,9 +126,9 @@ sgfilterflag = True # set to True to filter, False to leave alone
 sgfilterwindow = 51 # filter window size--larger windows yield more smoothing
 
 # parallel pool size
-pool_size=mp.cpu_count() # change for custom
+pool_size=4 #mp.cpu_count() # change for custom
 
-# STEP 1: Area Correction (in order to make the data to generate the LUT)
+# # STEP 1: Area Correction (in order to make the data to generate the LUT)
 print('DOING AREA CORRECTION...')
 pool = Pool(pool_size)
 for num in range(0,len(sardata)): # do first and third steps all at once as loop; do second  steps as loops within each step
@@ -140,18 +140,18 @@ for num in range(0,len(sardata)): # do first and third steps all at once as loop
                                               False,        # createmaskflag
                                               True,         #  createlookflag
                                               True,         # createslopeflag
-                                              False,        # overwriteflag
+                                              True,        # overwriteflag
                                               False,        # postprocessflag
                                               minlook,      # minlook
                                               maxlook,      # maxlook
                                               pol,          # pol
                                               hgtval,       # hgtval
                                               sardata[num])) # scene  
-                                              #     radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, None, calname='area_only', docorrectionflag=True, zerodemflag=True, createmaskflag=False, createlookflag=True, createslopeflag=True,  overwriteflag=False, postprocessflag=False, pol=pol, hgtval=hgtval, scene=sardata[num])
+#                                               #     radiocal.batchcal(datapath[num], programpath, calibprog, geocodeprog, None, calname='area_only', docorrectionflag=True, zerodemflag=True, createmaskflag=False, createlookflag=True, createslopeflag=True,  overwriteflag=False, postprocessflag=False, pol=pol, hgtval=hgtval, scene=sardata[num])
 pool.close()
 pool.join()
 
-# STEP 2: Create landcover mask images
+# # STEP 2: Create landcover mask images
 print('BUILDING LANDCOVER MASKS FROM MOSAIC') # using my custom script (on path) to crop and reproject from landcover mosaic
 for num in range(0,len(sardatabase)): 
     target_align_file = datapath[num]+sardata[num][0:-4]+'slope'+'.grd' # just need ground-projected file to align to 
@@ -163,7 +163,7 @@ for num in range(0,len(sardatabase)):
     else: 
         print('LANDCOVER MASK ALREADY BUILT: {}'.format(landcover_file))
 
-# STEP 3: LUT Creation
+# # STEP 3: LUT Creation
 print('CREATING LUT...')
 pool = Pool(pool_size)
 for num in range(0,len(sardata)): 
@@ -175,7 +175,7 @@ pool.close()
 pool.join()
 
 
-# STEP 4:  LUT Correction
+# # STEP 4:  LUT Correction
 print('DOING LUT CORRECTION...')
 pool = Pool(pool_size)
 for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
@@ -194,14 +194,14 @@ for num in range(0,len(sardata)): # do first steps all at once as loop; do secon
                                               pol,          # pol
                                               hgtval,       # hgtval
                                               sardata[num])) # scene  
- # radiocal.batchcal, args=(datapath[num], programpath, calibprog, geocodeprog, LUTpath+'caltbl_'+LUTname[num],calname=calname, docorrectionflag=True, zerodemflag=True, createmaskflag=True, createlookflag=True, createslopeflag=True, overwriteflag=False, postprocessflag=False, minlook=minlook, maxlook=maxlook, pol=pol, hgtval=hgtval))
+#  # radiocal.batchcal, args=(datapath[num], programpath, calibprog, geocodeprog, LUTpath+'caltbl_'+LUTname[num],calname=calname, docorrectionflag=True, zerodemflag=True, createmaskflag=True, createlookflag=True, createslopeflag=True, overwriteflag=False, postprocessflag=False, minlook=minlook, maxlook=maxlook, pol=pol, hgtval=hgtval))
 pool.close()
 pool.join()
 
 # STEP 5:  Complex LUT Correction
 print('DOING Complex LUT CORRECTION...')
-pool = Pool(pool_size)
-for num in range(0,len(sardata)): # do first steps all at once as loop; do second and third steps as loops within each step
+pool = Pool(pool_size) #Pool(pool_size)
+for num in range(0,len(sardata)): # [4]: # # do first steps all at once as loop; do second and third steps as loops within each step
     corrstr=sardatabase[num][-5:] # 'CX_01' or 'CX_02'
     pool.apply_async(complex_RTC.complexRTC, args=(
         sardata[num], #'bakerc_16008_19059_012_190904_L090',                                                   # base
