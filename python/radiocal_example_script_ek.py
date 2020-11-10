@@ -24,7 +24,7 @@ import radiocal
 print('Starting radiocal example script.')
 
 # sardata_base
-sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/Fairbanks-2020-July-16.txt' #  rtc-run-1.txt rtc-test-1.txt' # path to list of UAVSAR IDs to run
+sardatabase_list='/home/ekyzivat/scripts/random-wetlands/data_paths/tooli-atq-2020-nov-6.txt' #  rtc-run-1.txt rtc-test-1.txt' # path to list of UAVSAR IDs to run
 sardatabase=open(sardatabase_list).read().splitlines() # a list of UAVSAR IDs
 
 # uncomment for testing:
